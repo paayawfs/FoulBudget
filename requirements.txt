@@ -1,0 +1,15 @@
+pbpstats==1.3.11
+nba_api==1.11.4
+lifelines==0.30.3
+pandas==2.3.3
+numpy==2.4.4
+statsmodels==0.14.6
+pyarrow==24.0.0
+polyleven==0.11.0
+
+# nba-on-court pins numpy<2.0 and polyleven<0.9 in its own metadata, which
+# conflicts with the versions above and has no Python 3.14 wheels anyway.
+# Install it separately, ignoring its declared deps (satisfied by the
+# packages above instead); see src/ingest/lineups.py for the numpy.in1d
+# shim this requires at import time.
+#   pip install --no-deps nba-on-court==0.2.1
