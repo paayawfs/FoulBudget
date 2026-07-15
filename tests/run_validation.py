@@ -16,6 +16,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from config import ANALYSIS_SEASONS, EVAL_SEASON  # noqa: E402
 from policy.solver import (  # noqa: E402
     PolicyValues, margin_step_distribution, evaluate_convention_cost,
     D_GRID, N_STEPS, STEP_SECONDS, period_of_step,
@@ -171,7 +172,7 @@ def run_A_B_D(support, probs, mean):
 def run_C(support, probs, mean, kappa_hat):
     # C1: replacement weights sum to 1
     worst = 0.0
-    for s in (2022, 2023, 2024):
+    for s in ANALYSIS_SEASONS:
         w = pd.read_csv(VALUE_DIR / f"replacement_weights_{s}.csv")
         sums = w.groupby("player_id")["weight"].sum()
         worst = max(worst, float((sums - 1).abs().max()))
@@ -192,7 +193,7 @@ def run_C(support, probs, mean, kappa_hat):
 
     # C4: hazard face-check, predicted vs actual fouls per player-season
     ex = pd.concat([pd.read_parquet(EXPOSURE_DIR / f"{s}.parquet").assign(season=s)
-                    for s in (2022, 2023, 2024)], ignore_index=True)
+                    for s in ANALYSIS_SEASONS], ignore_index=True)
     ex = ex[ex["minutes_exposed"] > 0].copy()
     ex["player_season"] = ex["player_id"].astype(str) + "_" + ex["season"].astype(str)
     alphas = pd.read_csv(HAZARD_DIR / "alphas.csv", index_col=0)["alpha"]
@@ -220,37 +221,37 @@ def run_C(support, probs, mean, kappa_hat):
 
 
 def run_E(costs, support, probs, mean, kappa_hat):
-    delta24 = pd.read_csv(VALUE_DIR / "delta_2024.csv").set_index("player_id")
+    deltas = pd.read_csv(VALUE_DIR / f"delta_{EVAL_SEASON}.csv").set_index("player_id")
 
     # E1: archetype ordering
     per_player = costs.groupby("player_id")["cost_wp"].agg(["mean", "count"])
     per_player = per_player[per_player["count"] >= 5]
-    per_player["name"] = per_player.index.map(delta24["name"])
-    per_player["delta48"] = per_player.index.map(delta24["delta"]) * 48
+    per_player["name"] = per_player.index.map(deltas["name"])
+    per_player["delta48"] = per_player.index.map(deltas["delta"]) * 48
     top = per_player.nlargest(12, "mean")
     tbl = top.assign(mean_pp=top["mean"] * 100).round(2)[["name", "mean_pp", "count", "delta48"]]
     log("E1", "EYEBALL", "top-12 by mean WP cost per occurrence (>=5 occurrences):\n"
         + tbl.to_string(index=False))
 
     # E2: lambda vs raw per-36 foul rates
-    ex = pd.read_parquet(EXPOSURE_DIR / "2024.parquet")
+    ex = pd.read_parquet(EXPOSURE_DIR / f"{EVAL_SEASON}.parquet")
     ex = ex[ex["minutes_exposed"] > 0]
     raw = ex.groupby("player_id").agg(m=("minutes_exposed", "sum"), f=("fouls_in_window", "sum"))
     raw = raw[raw["m"] >= 1000]
     raw["per36"] = raw["f"] / raw["m"] * 36
     alphas = pd.read_csv(HAZARD_DIR / "alphas.csv", index_col=0)["alpha"]
-    raw["lam36"] = np.exp(raw.index.astype(str).map(lambda i: alphas.get(f"{i}_2024", np.nan))) * 36
+    raw["lam36"] = np.exp(raw.index.astype(str).map(lambda i: alphas.get(f"{i}_{EVAL_SEASON}", np.nan))) * 36
     raw = raw.dropna()
     r = float(np.corrcoef(raw["per36"], raw["lam36"])[0, 1])
-    raw["name"] = raw.index.map(delta24["name"])
+    raw["name"] = raw.index.map(deltas["name"])
     hi = raw.nlargest(5, "lam36")[["name", "lam36", "per36"]].round(2)
     lo = raw.nsmallest(5, "lam36")[["name", "lam36", "per36"]].round(2)
     log("E2", "PASS" if r > 0.9 else "FAIL",
-        f"corr(model lambda, raw per-36 fouls) = {r:.3f} (>=1000 min, 2024)\n"
+        f"corr(model lambda, raw per-36 fouls) = {r:.3f} (>=1000 min, {EVAL_SEASON})\n"
         f"highest lambda:\n{hi.to_string(index=False)}\nlowest lambda:\n{lo.to_string(index=False)}")
 
     # E3: strong backups shrink delta
-    d = delta24.dropna(subset=["delta", "composite_rapm"])
+    d = deltas.dropna(subset=["delta", "composite_rapm"])
     d = d[d["minutes"] >= 1500].copy()
     d["rapm48"] = d["rapm"] * 48
     d["comp48"] = d["composite_rapm"] * 48
@@ -262,9 +263,9 @@ def run_E(costs, support, probs, mean, kappa_hat):
         + "\nweakest backups (delta should stretch):\n" + weak_bk.to_string(index=False))
 
     # E4: largest realized-cost episodes
-    ex24 = pd.read_parquet(EXPOSURE_DIR / "2024.parquet")
+    ex24 = pd.read_parquet(EXPOSURE_DIR / f"{EVAL_SEASON}.parquet")
     ex24 = ex24[ex24["minutes_exposed"] > 0]
-    lu = pd.read_parquet(LINEUPS_DIR / "2024.parquet", columns=["GAME_ID", "SCOREMARGIN", "PCTIMESTRING"])
+    lu = pd.read_parquet(LINEUPS_DIR / f"{EVAL_SEASON}.parquet", columns=["GAME_ID", "SCOREMARGIN", "PCTIMESTRING"])
     lu["margin"] = pd.to_numeric(lu["SCOREMARGIN"].replace("TIE", "0"), errors="coerce")
     finals = lu.groupby("GAME_ID")["margin"].last()
 
@@ -279,11 +280,11 @@ def run_E(costs, support, probs, mean, kappa_hat):
     first["remaining"] = (2880 - first["start_elapsed"]).clip(lower=0) / 60
     first["sat"] = (first["remaining"] - first["on_after"]).clip(lower=0)
     first["final_margin"] = first["game_id"].map(finals).abs()
-    first["delta48"] = first["player_id"].map(delta24["delta"]) * 48
+    first["delta48"] = first["player_id"].map(deltas["delta"]) * 48
     hi_delta = first["delta48"] >= first["delta48"].quantile(0.9)
     cases = first[hi_delta & (first["final_margin"] <= 5) & (first["sat"] >= 6)]
     cases = cases.sort_values(["delta48", "sat"], ascending=False).head(3)
-    cases["name"] = cases["player_id"].map(delta24["name"])
+    cases["name"] = cases["player_id"].map(deltas["name"])
     tbl = cases[["game_id", "name", "period", "foul_count", "sat", "remaining", "final_margin", "delta48"]].round(1)
     log("E4", "EYEBALL", "case studies: top-decile-delta starters benched >=6 min "
         "after Q+1 trouble in games decided by <=5:\n" + tbl.to_string(index=False))
@@ -293,11 +294,11 @@ def run_E(costs, support, probs, mean, kappa_hat):
         c = cases.iloc[0]
         gid, pid = int(c["game_id"]), int(c["player_id"])
         dsign = 1.0 if ex24[(ex24.game_id == gid) & (ex24.player_id == pid)].iloc[0]["side"] == "HOME" else -1.0
-        lam = float(np.exp(pd.read_csv(HAZARD_DIR / "alphas.csv", index_col=0)["alpha"].get(f"{pid}_2024", np.nan)))
+        lam = float(np.exp(pd.read_csv(HAZARD_DIR / "alphas.csv", index_col=0)["alpha"].get(f"{pid}_{EVAL_SEASON}", np.nan)))
         pv = PolicyValues(float(c["delta48"]) / 48, lam, kappa_hat, support, probs, mean)
         spells = ex24[(ex24.game_id == gid) & (ex24.player_id == pid)].sort_values("start_elapsed")
         lines = [f"game {gid}, {c['name']} (delta {c['delta48']:+.1f}/48, lam {lam * 36:.1f}/36)"]
-        lu_g = pd.read_parquet(LINEUPS_DIR / "2024.parquet", columns=["GAME_ID", "PCTIMESTRING", "SCOREMARGIN"])
+        lu_g = pd.read_parquet(LINEUPS_DIR / f"{EVAL_SEASON}.parquet", columns=["GAME_ID", "PCTIMESTRING", "SCOREMARGIN"])
         lu_g = lu_g[lu_g.GAME_ID == gid]
         lu_g["margin"] = pd.to_numeric(lu_g["SCOREMARGIN"].replace("TIE", "0"), errors="coerce").ffill().fillna(0)
         for _, s in spells.iterrows():
