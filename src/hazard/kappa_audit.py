@@ -7,9 +7,8 @@ can be chosen. Positions are not in the play-by-play, so that candidate
 waits for a roster join.
 
 Possessions are approximated as minutes x 100/48 (league pace); the exposure
-table is minute-denominated. Run on the current dev slice this audit shows
-what 3 seasons support; rerun after data expansion for the Phase A decision
-proper.
+table is minute-denominated. Seasons come from config.ANALYSIS_SEASONS, so
+the audit always reflects the current analysis window.
 
 Writes reports/kappa_audit.md.
 """
@@ -21,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config import ANALYSIS_SEASONS  # noqa: E402
 from hazard.kappa import load, fit  # noqa: E402
 
 OUT = Path(__file__).resolve().parents[2] / "reports" / "kappa_audit.md"
@@ -46,7 +46,8 @@ def run() -> None:
     per_ps = ft.groupby(["player_id", "season"])["minutes_exposed"].sum() * POSS_PER_MIN
     pooled = per_ps.groupby("player_id").sum()
 
-    lines = ["# Phase A feasibility audit — foul-trouble exposure (dev slice, 3 seasons)", ""]
+    lines = [f"# Phase A feasibility audit — foul-trouble exposure "
+             f"({len(ANALYSIS_SEASONS)} analysis seasons: {ANALYSIS_SEASONS[0]}–{ANALYSIS_SEASONS[-1]})", ""]
     lines.append(f"players with ANY foul-trouble time: {len(pooled)}")
     lines.append(f"total foul-trouble possessions (approx): {pooled.sum():,.0f}")
     lines.append("")
@@ -55,7 +56,7 @@ def run() -> None:
     lines.append(q.to_string())
     lines.append("")
     qp = pooled.quantile([0.1, 0.25, 0.5, 0.75, 0.9]).round(1)
-    lines.append("## per player POOLED across 3 seasons (quantiles)")
+    lines.append(f"## per player POOLED across {len(ANALYSIS_SEASONS)} seasons (quantiles)")
     lines.append(qp.to_string())
     lines.append("")
     lines.append("## players above candidate thresholds (pooled possessions)")
