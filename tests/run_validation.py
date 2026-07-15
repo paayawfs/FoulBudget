@@ -333,6 +333,15 @@ def write_md():
     for tid, status, detail in results:
         if "\n" in detail:
             lines += [f"### {tid} ({status})", "```", detail, "```", ""]
+
+    # everything below the marker is maintained by hand (session logs, data
+    # gates); regeneration must not clobber it
+    marker = "<!-- session-log -->"
+    if OUT.exists() and marker in OUT.read_text(encoding="utf-8"):
+        preserved = OUT.read_text(encoding="utf-8").split(marker, 1)[1]
+        lines += [marker + preserved]
+    else:
+        lines.append(marker)
     OUT.write_text("\n".join(lines), encoding="utf-8")
     print(f"\nwrote {OUT}")
 

@@ -25,7 +25,9 @@ import pandas as pd
 
 LINEUPS_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "lineups"
 VALUE_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "value"
-SEASONS = (2022, 2023, 2024)
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config import ANALYSIS_SEASONS as SEASONS
 ON_COLS = [f"{side}_PLAYER{i}" for side in ("HOME", "AWAY") for i in range(1, 6)]
 SUB_EVENTMSGTYPE = 8
 

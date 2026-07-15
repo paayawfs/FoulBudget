@@ -26,7 +26,9 @@ from scipy import sparse
 
 EXPOSURE_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "exposure"
 OUT_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "hazard"
-SEASONS = (2022, 2023, 2024)
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config import ANALYSIS_SEASONS as SEASONS
 
 
 def load() -> pd.DataFrame:

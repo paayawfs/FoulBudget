@@ -10,7 +10,9 @@ from pathlib import Path
 import pandas as pd
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
-SEASONS = [2022, 2023, 2024]
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config import RAPM_SEASONS as SEASONS
 EXPECTED_REGULAR_SEASON_GAMES = 1230  # 30 teams x 82 games / 2
 
 

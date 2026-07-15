@@ -34,15 +34,18 @@ NON_PERSONAL_FOUL_ACTIONS = {11, 12, 13, 16, 17, 18, 19, 25}
 
 
 def _team_abbrev_map(game: pd.DataFrame) -> dict:
-    """player_id -> team abbreviation, from every PLAYERn_ID/PLAYERn_TEAM_ABBREVIATION pair."""
-    mapping = {}
+    """player_id -> team abbreviation, majority-voted across every
+    PLAYERn_ID/PLAYERn_TEAM_ABBREVIATION pair -- single mislabeled rows
+    (e.g. game 22100405) must not flip a player's team."""
+    pairs = []
     for i in (1, 2, 3):
-        ids = game[f"PLAYER{i}_ID"]
-        abbrevs = game[f"PLAYER{i}_TEAM_ABBREVIATION"]
-        for pid, abbrev in zip(ids, abbrevs):
-            if pid and pd.notna(abbrev):
-                mapping[pid] = abbrev
-    return mapping
+        pairs.append(pd.DataFrame({
+            "pid": game[f"PLAYER{i}_ID"],
+            "abbrev": game[f"PLAYER{i}_TEAM_ABBREVIATION"],
+        }))
+    df = pd.concat(pairs).dropna()
+    df = df[df["pid"] > 0]
+    return df.groupby("pid")["abbrev"].agg(lambda s: s.mode().iloc[0]).to_dict()
 
 
 def _score_margin(game: pd.DataFrame) -> pd.Series:
@@ -136,8 +139,13 @@ def build_game_exposure(game: pd.DataFrame) -> pd.DataFrame:
     game = game.sort_values("EVENT_ORDER").reset_index(drop=True)
     team_map = _team_abbrev_map(game)
 
-    home_team = team_map.get(game[HOME_COLS[0]].iloc[0])
-    away_team = team_map.get(game[AWAY_COLS[0]].iloc[0])
+    # side label = majority vote over the five starters, not just slot 1
+    def side_team(cols):
+        votes = pd.Series([team_map.get(p) for p in game[cols].iloc[0]]).dropna()
+        return votes.mode().iloc[0] if len(votes) else None
+
+    home_team = side_team(HOME_COLS)
+    away_team = side_team(AWAY_COLS)
 
     rows = []
     home_players = pd.unique(game[HOME_COLS].values.ravel())
@@ -183,5 +191,8 @@ def build_season_exposure(season: int) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    for season in (2022, 2023, 2024):
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from config import ANALYSIS_SEASONS
+    for season in ANALYSIS_SEASONS:
         build_season_exposure(season)

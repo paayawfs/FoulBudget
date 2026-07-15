@@ -25,8 +25,11 @@ import statsmodels.api as sm
 
 LINEUPS_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "lineups"
 OUT_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "wp"
-TRAIN_SEASONS = (2022, 2023)
-HOLDOUT_SEASON = 2024
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config import ANALYSIS_SEASONS, EVAL_SEASON
+TRAIN_SEASONS = tuple(s for s in ANALYSIS_SEASONS if s != EVAL_SEASON)
+HOLDOUT_SEASON = EVAL_SEASON
 REGULATION_SECONDS = 2880
 TIME_BIN_SECONDS = 30
 MARGIN_CLIP = 30

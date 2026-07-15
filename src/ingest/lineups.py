@@ -25,7 +25,7 @@ LINEUP_COLS = [f"{side}_PLAYER{i}" for side in ("HOME", "AWAY") for i in range(1
 # wrong minutes (caught by check_team_minutes.py + box-score validation).
 # 5 of 3690 games -- dropped and documented rather than patched, since
 # pbpstats/data.nba.com live repair sources are unreachable from this machine.
-CORRUPT_GAMES = {22200234, 22201040, 22400372, 22400433, 22400860}
+CORRUPT_GAMES = {22100545, 22200234, 22201040, 22400372, 22400433, 22400860}
 
 
 def _repair_event_order(game_df: pd.DataFrame) -> pd.DataFrame:
@@ -97,6 +97,91 @@ def add_lineups_for_game(game_df: pd.DataFrame) -> pd.DataFrame:
     return result.sort_values("EVENT_ORDER").reset_index(drop=True)
 
 
+def _cdn_as_v2(season: int) -> pd.DataFrame:
+    """Adapt the cdnnba (data.nba.com live) format to the v2 columns this
+    pipeline consumes. Needed for 2025-26+, which shufinskiy publishes only
+    in v3/cdn form; cdn is preferred over v3 because substitutions carry
+    both player IDs (v3 names the incoming player only in free text).
+    """
+    raw = pd.read_csv(RAW_DIR / "cdnnba" / str(season) / f"cdnnba_{season}.csv",
+                      low_memory=False)
+    raw = raw.sort_values(["gameId", "orderNumber"]).reset_index(drop=True)
+
+    clock = raw["clock"].str.extract(r"PT(\d+)M(\d+)")
+    pctime = clock[0].astype(int).astype(str) + ":" + clock[1].str.zfill(2)
+
+    msg = pd.Series(0, index=raw.index)  # default: irrelevant event type
+    msg[raw["actionType"] == "foul"] = 6
+    msg[(raw["actionType"] == "period") & (raw["subType"] == "start")] = 12
+    msg[(raw["actionType"] == "period") & (raw["subType"] == "end")] = 13
+
+    # cdn folds every non-personal foul into subType "technical"; map it to
+    # v2 action type 11 (in exposure's NON_PERSONAL_FOUL_ACTIONS), rest to 1
+    action = pd.Series(0, index=raw.index)
+    action[(msg == 6) & (raw["subType"] == "technical")] = 11
+    action[(msg == 6) & (raw["subType"] != "technical")] = 1
+
+    player_ids = raw["personId"].fillna(0).astype(np.int64)
+    is_player = (player_ids > 0) & (player_ids < 10**9)  # team ids are 161061xxxx
+
+    # PERSONxTYPE must encode the side (4 = home player, 5 = away player) --
+    # nba_on_court splits HOME/AWAY lineups on it. cdn has no home flag, but
+    # scoreHome increments exactly when the acting team is the home team.
+    dh = raw.groupby("gameId")["scoreHome"].diff().fillna(0)
+    home_scoring = raw.loc[(dh > 0) & raw["teamId"].notna(), ["gameId", "teamId"]]
+    home_team = home_scoring.groupby("gameId")["teamId"].agg(lambda s: s.mode().iloc[0])
+    row_is_home = raw["teamId"] == raw["gameId"].map(home_team)
+
+    df = pd.DataFrame({
+        "GAME_ID": raw["gameId"],
+        "EVENTNUM": raw["orderNumber"],  # guaranteed monotone, unlike v2
+        "EVENTMSGTYPE": msg,
+        "EVENTMSGACTIONTYPE": action,
+        "PERIOD": raw["period"],
+        "PCTIMESTRING": pctime,
+        "SCOREMARGIN": (raw["scoreHome"] - raw["scoreAway"]).astype("Int64").astype(str),
+        "SCORE": raw["scoreAway"].astype("Int64").astype(str) + " - " + raw["scoreHome"].astype("Int64").astype(str),
+        "PERSON1TYPE": np.where(is_player, np.where(row_is_home, 4, 5), 7),  # noc ignores 6/7
+        "PLAYER1_ID": player_ids.where(is_player, 0),
+        "PLAYER1_NAME": raw["playerNameI"],
+        "PLAYER1_TEAM_ABBREVIATION": raw["teamTricode"],
+        "PERSON2TYPE": 0, "PLAYER2_ID": 0, "PLAYER2_NAME": None, "PLAYER2_TEAM_ABBREVIATION": None,
+        "PERSON3TYPE": 0, "PLAYER3_ID": 0, "PLAYER3_NAME": None, "PLAYER3_TEAM_ABBREVIATION": None,
+    })
+
+    # collapse out/in substitution rows into single v2-style sub rows
+    # (PLAYER1 = out, PLAYER2 = in). Mass substitutions arrive as blocks of
+    # outs followed by ins, so pair positionally WITHIN each
+    # (game, team, period, clock) stoppage rather than by adjacency.
+    keys = ["gameId", "teamId", "period", "clock"]
+    subs = raw.loc[raw["actionType"] == "substitution", keys + ["subType", "personId", "playerNameI", "teamTricode"]].copy()
+    subs["rank"] = subs.groupby(keys + ["subType"]).cumcount()
+    outs = subs[subs["subType"] == "out"].reset_index()
+    ins = subs[subs["subType"] == "in"].reset_index()
+    m = outs.merge(ins, on=keys + ["rank"], suffixes=("_o", "_i"))
+    df.loc[m["index_o"], "EVENTMSGTYPE"] = 8
+    # sub-in player is on the same side as the sub-out player
+    df.loc[m["index_o"], "PERSON2TYPE"] = df.loc[m["index_o"], "PERSON1TYPE"].to_numpy()
+    df.loc[m["index_o"], "PLAYER2_ID"] = m["personId_i"].to_numpy(dtype=np.int64)
+    df.loc[m["index_o"], "PLAYER2_NAME"] = m["playerNameI_i"].to_numpy()
+    df.loc[m["index_o"], "PLAYER2_TEAM_ABBREVIATION"] = m["teamTricode_i"].to_numpy()
+    unpaired = len(outs) + len(ins) - 2 * len(m)
+    if unpaired:
+        print(f"  cdn adapter: {unpaired} substitution rows unmatched within their stoppage (left as non-events)")
+
+    # cdn additionally announces period-START lineup changes as subs at the
+    # untouched clock (12:00, or 5:00 in OT); v2 never does, and nba_on_court
+    # infers period lineups from play instead -- feeding it these breaks its
+    # per-period player inference, so demote them back to non-events
+    start_clock = np.where(m["period"] <= 4, "PT12M00.00S", "PT05M00.00S")
+    admin = m.loc[m["clock"].to_numpy() == start_clock, "index_o"]
+    df.loc[admin, "EVENTMSGTYPE"] = 0
+    # matched 'in' rows stay EVENTMSGTYPE 0 (consumed by the pair)
+
+    df["SCOREMARGIN"] = df["SCOREMARGIN"].replace("<NA>", None)
+    return df
+
+
 def build_season_lineups(season: int) -> pd.DataFrame:
     """Add on-court lineups to every game in a season; cache the result to parquet."""
     out_path = PROCESSED_DIR / f"{season}.parquet"
@@ -105,7 +190,11 @@ def build_season_lineups(season: int) -> pd.DataFrame:
         return pd.read_parquet(out_path)
 
     raw_path = RAW_DIR / "nbastats" / str(season) / f"nbastats_{season}.csv"
-    df = pd.read_csv(raw_path, low_memory=False)
+    if raw_path.exists():
+        df = pd.read_csv(raw_path, low_memory=False)
+    else:
+        print(f"{season}: no v2 nbastats file, adapting cdnnba")
+        df = _cdn_as_v2(season)
 
     enriched_games = []
     failed_games = []
@@ -131,5 +220,8 @@ def build_season_lineups(season: int) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    for season in (2022, 2023, 2024):
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from config import RAPM_SEASONS
+    for season in RAPM_SEASONS:
         build_season_lineups(season)

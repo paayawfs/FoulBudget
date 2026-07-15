@@ -31,7 +31,9 @@ from scipy import sparse
 
 LINEUPS_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "lineups"
 OUT_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "value"
-SEASONS = (2022, 2023, 2024)
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config import ANALYSIS_SEASONS, RAPM_SEASONS
 HOME_COLS = [f"HOME_PLAYER{i}" for i in range(1, 6)]
 AWAY_COLS = [f"AWAY_PLAYER{i}" for i in range(1, 6)]
 ALPHA_GRID = (250.0, 1000.0, 4000.0, 16000.0)
@@ -146,8 +148,9 @@ def run() -> None:
     # Windows cp1252 console can't print diacritics in player names
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    stints_by_season = {s: build_stints(s) for s in SEASONS}
-    for season in SEASONS:
+    # burn-in seasons contribute stints to the decay pool but get no ratings
+    stints_by_season = {s: build_stints(s) for s in RAPM_SEASONS}
+    for season in ANALYSIS_SEASONS:
         out = fit_season(season, stints_by_season)
         names = player_names(season)
         out["name"] = out["player_id"].map(names)

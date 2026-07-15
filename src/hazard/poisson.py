@@ -29,7 +29,9 @@ import statsmodels.api as sm
 
 EXPOSURE_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "exposure"
 OUT_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "hazard"
-SEASONS = (2022, 2023, 2024)
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config import ANALYSIS_SEASONS as SEASONS
 PRIOR_MINUTES = 200.0
 MAX_ITER = 25
 TOL = 1e-7

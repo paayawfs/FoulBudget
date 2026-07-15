@@ -10,7 +10,9 @@ from pathlib import Path
 import pandas as pd
 
 EXPOSURE_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "exposure"
-SEASONS = (2022, 2023, 2024)
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config import ANALYSIS_SEASONS as SEASONS
 # exposure spells end at the last recorded event, not the literal 0:00 buzzer
 # (see exposure.py docstring), so team totals sit slightly under the physical
 # maximum; 3 min/team absorbs that slack while still catching real breakage.

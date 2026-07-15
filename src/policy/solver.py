@@ -43,8 +43,10 @@ D_MAX = 45
 D_GRID = np.arange(-D_MAX, D_MAX + 1)   # 91
 N_FOULS = 7                              # 0..6
 PLAY_TIE_EPS = 1e-12                     # indifference resolves to play
-EVAL_SEASON = 2024
-TRAIN_SEASONS = (2022, 2023)
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config import ANALYSIS_SEASONS, EVAL_SEASON
+TRAIN_SEASONS = tuple(s for s in ANALYSIS_SEASONS if s != EVAL_SEASON)
 
 
 def margin_step_distribution() -> np.ndarray:

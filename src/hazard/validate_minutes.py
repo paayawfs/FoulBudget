@@ -8,11 +8,13 @@ import time
 from pathlib import Path
 
 import pandas as pd
-from nba_api.stats.endpoints import boxscoretraditionalv2
+from nba_api.stats.endpoints import boxscoretraditionalv2, boxscoretraditionalv3
 
 EXPOSURE_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "exposure"
 OUT_PATH = Path(__file__).resolve().parents[2] / "reports" / "eda" / "minutes_reconciliation.csv"
-SEASONS = (2022, 2023, 2024)
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config import ANALYSIS_SEASONS as SEASONS
 SAMPLE_PER_SEASON = 15
 REQUEST_DELAY_SECONDS = 0.6
 # regression set: every game the first validation run (pre event-order repair)
@@ -45,8 +47,8 @@ def sample_game_ids() -> list:
 
 
 def parse_min(min_str) -> float:
-    if pd.isna(min_str) or min_str is None:
-        return 0.0
+    if min_str is None or pd.isna(min_str) or str(min_str).strip() == "":
+        return 0.0  # V3 uses "" for DNP players
     minutes, _, seconds = str(min_str).partition(":")
     return int(minutes) + int(seconds or 0) / 60
 
@@ -55,6 +57,11 @@ def fetch_official_minutes(game_id: int) -> pd.DataFrame:
     padded = f"{game_id:010d}"
     bx = boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=padded, timeout=20)
     df = bx.player_stats.get_data_frame()
+    if df.empty:
+        # V2 stopped publishing as of 2025-26; V3 serves those seasons
+        bx = boxscoretraditionalv3.BoxScoreTraditionalV3(game_id=padded, timeout=20)
+        df = bx.player_stats.get_data_frame().rename(
+            columns={"personId": "PLAYER_ID", "minutes": "MIN"})
     df["official_minutes"] = df["MIN"].apply(parse_min)
     df["game_id"] = game_id
     return df[["game_id", "PLAYER_ID", "official_minutes"]].rename(columns={"PLAYER_ID": "player_id"})
@@ -95,6 +102,17 @@ def run() -> pd.DataFrame:
     for tol in (0.5, 1.0, 2.0):
         pct = (merged["abs_error"] <= tol).mean() * 100
         print(f"within {tol} min: {pct:.1f}%")
+
+    # per-season gate table (game_id encodes the season: 22200019 -> 2022)
+    merged["season"] = 2000 + (merged["game_id"] // 100000) % 100
+    by_season = merged.groupby("season").agg(
+        rows=("abs_error", "size"),
+        mae=("abs_error", "mean"),
+        within_1min=("abs_error", lambda e: (e <= 1.0).mean()),
+        max_err=("abs_error", "max"),
+    )
+    print("\nper-season gate:")
+    print(by_season.round(3).to_string())
 
     # per-game clause: aggregate row stats can look fine while a systematic
     # per-game failure hits most of one game's players (the pre-repair state:

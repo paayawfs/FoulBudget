@@ -107,3 +107,37 @@ game 22400475, Nikola Jokić (delta +9.2/48, lam 2.0/36)
   Q4   7.9m left | d= -5 | f=2         | coach: on  0.9m (foul) | model: play
   Q4   7.0m left | d= -2 | f=3         | coach: on  7.0m (game_end) | model: play
 ```
+
+<!-- session-log -->
+
+## Data expansion gates — 2026-07-15 (PROJECT_PLAN Phase 1)
+
+Corpus: behavioral window 2021-2025 (5 seasons, 6,144 games after corrupt-game
+drops), RAPM burn-in 2019-2020 (lineups only). 2025-26 exists only in v3/cdn
+format upstream; ingested via the cdnnba adapter in src/ingest/lineups.py
+(paired out/in sub rows, home side recovered from scoreHome increments,
+period-start administrative subs demoted, foul classification verified 0
+mismatches vs cdn's own foulPersonalTotal on 21,278 player-games).
+
+Free physical screen (check_team_minutes): 0 flagged team-rows / 6,144 games.
+
+Per-season box-score gate (validate_minutes, 15 games/season + 12-game
+regression set, 2,004 player-game rows): PASS
+
+| season | rows | MAE (min) | within 1 min | max err |
+|---|---|---|---|---|
+| 2021 | 392 | 0.042 | 100% | 0.55 |
+| 2022 | 381 | 0.044 | 100% | 0.70 |
+| 2023 | 397 | 0.039 | 100% | 0.52 |
+| 2024 | 442 | 0.038 | 100% | 0.45 |
+| 2025 | 392 | 0.042 | 100% | 0.43 |
+
+Manual fixes this expansion required (all in code, documented in place):
+- cdnnba adapter for 2025-26 (no v2 feed exists upstream).
+- nba_on_court has a hidden network fallback to stats.nba.com for games it
+  cannot resolve locally; 9 such 2025 games needed retry on timeout.
+- BoxScoreTraditionalV2 stopped publishing at 2025-26; gate falls back to V3
+  (whose minutes field uses "" for DNP players).
+- Team attribution in exposure.py now majority-voted (game 22100405 had a
+  single mislabeled row that flipped a starter's team).
+- CORRUPT_GAMES grew by one: 22100545 (2021, wholesale-corrupt sub ledger).
