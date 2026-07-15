@@ -22,7 +22,7 @@ kappa negative enough that delta + kappa < 0 in foul trouble.
 | B4 | PASS | max |W(d)+W(-d)-1| on lattice: 0.0009 (tolerance 0.03; steps de-meaned, residual skew only) |
 | C1 | PASS | max |sum(weights) - 1| over player-seasons: 2.00e-15 |
 | C2 | PASS | negative WP costs among 2,423 occurrences: 0 (min = 0.00e+00) |
-| C3 | N/A | v1 estimates a single pooled kappa (+4.22/48); the hierarchical per-player version is a planned refinement, test activates then |
+| C3 | PASS | kappa_i shrinkage: sd(dev) 0.44 (<25 FT poss) -> 2.15 (>=250) per48, max thin-sample |dev| = 1.51; FT-weighted mean kappa_i +4.22 vs v1 pooled +4.22; OOS gain over pooled = +0.031% of held-out MSE (lambda_kappa = 640) |
 | C4 | PASS | aggregate predicted/actual fouls = 1.0139 (within 2%), per-player-season corr = 0.997 (>=50 fouls; per-player gaps are the shrinkage prior working) |
 | C5 | PENDING | requires nbarapm.com same-window values (external download); run when the comparison file is available |
 | E1 | EYEBALL | top-12 by mean WP cost per occurrence (>=5 occurrences): |
@@ -166,3 +166,26 @@ Full verification suite: 22 checks, 0 FAIL (regenerated above).
 Every core number moved modestly and in no case changed sign or story:
 adaptation strengthened slightly, kappa is more precise, and the headline
 range is now 0.65-2.05 wins/team/season.
+
+## kappa v2 — per-player deviations, Phase B-E verdict (2026-07-15)
+
+Spec (src/hazard/kappa_v2.py): kappa spell WLS + one ridge-penalized
+foul-trouble deviation column per player (795), global kappa-bar lightly
+penalized, league-wide pooling per the Phase A decision. lambda_kappa = 640
+by 2-fold CV over games, scored on held-out foul-trouble spells.
+
+| gate | result |
+|---|---|
+| reconciliation | kappa-bar +4.33/48; FT-min-weighted mean kappa_i +4.22/48 = v1 pooled +4.22/48 |
+| C3 shrinkage | sd(dev) 0.44/48 (<25 FT poss) widening to 2.15/48 (>=250); thin samples hug the mean |
+| OOS gate | kappa_i beats pooled kappa-bar by +0.031% of held-out MSE (~= 0) |
+| face validity | reportable (>=250 poss, n=83) range -0.8 to +11.1 per 48 around +4.3 mean; no thin-sample extremes |
+
+**Phase E claims decision: outcome 2 (weak heterogeneity).** The data
+supports a pooled playing-scared effect with limited individual variation;
+paper language is "we tested for player-specific playing-scared effects;
+the data supports group-level effects" and personalization rests on delta_i
+and lambda_i. The DP and headline keep pooled kappa-bar (the Phase D DP
+integration check is therefore moot: integrating kappa_i ~= kappa-bar
+changes nothing the OOS gate hasn't already rejected). Artifacts:
+reports/kappa_v2.md, data/processed/hazard/kappa_v2.csv.

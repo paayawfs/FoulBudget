@@ -121,10 +121,16 @@ Coefficients read as % changes via exp().
 foul-trouble performance *deviation*, in RAPM units (points/100 possessions;
 ≈ points/48 at league pace, and points/min = points/48 ÷ 48 internally).
 κ_i = 0 means no playing-scared effect; negative = plays worse in foul
-trouble. The pooled v1 estimate is κ̄ (currently +4.0 per 48, i.e. positive:
-players outperform their baseline in foul trouble as currently managed).
-Per-player κ_i is Phase B of HIERARCHICAL_KAPPA_PLAN.md, gated on data
-expansion.
+trouble. The pooled v1 estimate is κ̄ (currently +4.2 per 48 on the 5-season
+window, i.e. positive: players outperform their baseline in foul trouble as
+currently managed).
+Per-player κ_i (v2, src/hazard/kappa_v2.py) is estimated: league-wide
+partial pooling (Phase A rejected tier grouping on 5 seasons), ridge
+deviations with λ_κ by CV. Verdict = HIERARCHICAL_KAPPA_PLAN Phase E
+outcome 2: out-of-sample gain of κ_i over pooled κ̄ ≈ +0.03% of held-out
+MSE — the data supports a pooled playing-scared effect with limited
+individual variation. Paper claims use group-level κ language;
+personalization rests on δ_i and λ_i. The DP keeps pooled κ̄.
 
 ```
 net_rating_it = θ_i + κ · 1[foul_trouble_it] + controls + ε
@@ -141,7 +147,7 @@ where π* = model-optimal policy, πc = conventional benching rule. Evaluate ove
 
 **Open questions (resolve during estimation, not before):**
 - RAPM regularization: single-season vs. multi-season prior? (Multi-season stabilizes δ but complicates per-season replacement composites.)
-- κ pooling group: position vs. foul-rate tier vs. role — pick after seeing foul-trouble stint counts per player.
+- κ pooling group: RESOLVED (2026-07-15) — league-wide; foul-rate and minutes tiers do not separate on 5 seasons (reports/kappa_audit.md).
 - Threshold for the "few observed foul-trouble subs" fallback (§3.2) — set empirically once sub events are tabulated.
 
 ---

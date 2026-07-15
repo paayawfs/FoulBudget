@@ -186,10 +186,25 @@ def run_C(support, probs, mean, kappa_hat):
         f"negative WP costs among {len(costs):,} occurrences: {n_neg} "
         f"(min = {costs['cost_wp'].min():.2e})")
 
-    # C3: per-player kappa shrinkage -- not applicable in v1
-    log("C3", "N/A", "v1 estimates a single pooled kappa (+{:.2f}/48); the "
-        "hierarchical per-player version is a planned refinement, test "
-        "activates then".format(kappa_hat * 48))
+    # C3: per-player kappa shrinkage (kappa v2, HIERARCHICAL_KAPPA_PLAN
+    # Phase D): thin-exposure players must hug kappa-bar, dispersion must
+    # widen with data, and the FT-weighted mean kappa_i must reconcile with
+    # the v1 pooled estimate
+    import json
+    k2 = pd.read_csv(HAZARD_DIR / "kappa_v2.csv")
+    meta = json.loads((HAZARD_DIR / "kappa_v2_meta.json").read_text())
+    lo = k2.loc[k2["ft_poss"] < 25, "dev_per48"]
+    hi = k2.loc[k2["ft_poss"] >= 250, "dev_per48"]
+    recon = float(np.average(k2["kappa_per48"], weights=k2["ft_poss"]))
+    ok = (lo.std() < hi.std() and lo.abs().max() < 3.0
+          and abs(recon - kappa_hat * 48) < 0.5)
+    log("C3", "PASS" if ok else "FAIL",
+        f"kappa_i shrinkage: sd(dev) {lo.std():.2f} (<25 FT poss) -> "
+        f"{hi.std():.2f} (>=250) per48, max thin-sample |dev| = "
+        f"{lo.abs().max():.2f}; FT-weighted mean kappa_i {recon:+.2f} vs v1 "
+        f"pooled {kappa_hat * 48:+.2f}; OOS gain over pooled = "
+        f"{meta['oos_gain_frac_of_pooled_mse']:+.3%} of held-out MSE "
+        f"(lambda_kappa = {meta['lambda_kappa']:g})")
 
     # C4: hazard face-check, predicted vs actual fouls per player-season
     ex = pd.concat([pd.read_parquet(EXPOSURE_DIR / f"{s}.parquet").assign(season=s)
