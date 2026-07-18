@@ -68,6 +68,11 @@ summary row in VALIDATION.md):
    difference it out (regression adds the window main effect; the
    foul-trouble × window coefficient then reads as the within-clutch
    foul-trouble shift). That DiD estimate is the cleaner number.
+   **Endgame-ritual robustness:** the final ~90 seconds of close games
+   contain deliberate take fouls, free-throw contests, and trailing-team
+   gambles that can inflate scoring independent of adaptation. Split
+   FORCED into core (window minus the final 90s) and final-90s; the
+   FORCED-core estimate must stay positive or the verdict is ambiguous.
 4. **Decision rule (no thumb on the scale):**
    - FORCED κ̄ remains significantly positive → adaptation is real; the
      estimated-kappa headline (2.05 wins) stands with B0 as its

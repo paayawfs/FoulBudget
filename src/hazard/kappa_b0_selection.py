@@ -40,6 +40,8 @@ FORCED_MARGIN = 3            # one possession
 ROTATION_MIN_MINUTES = 500   # rotation floor for the delta split
 MIN_FORCED_POSS = 2000       # widen the window below this
 MIN_TIER_CELL_POSS = 500     # tier-split cells need at least this
+ENDGAME_EXCLUDE_SEC = 90     # robustness: strip the intentional-fouling window
+OT_SEC = 300
 # widening ladder per the plan: margin first, then the time window
 LADDER = ((FORCED_WINDOW_SEC, FORCED_MARGIN),
           (FORCED_WINDOW_SEC, 6),
@@ -150,6 +152,31 @@ def run() -> None:
                  f"{(df_['coef'] - dc_['coef']) * 48:+.2f} per 48, t = {did_diff_t:.2f}")
     lines.append("")
 
+    # endgame-ritual robustness: the final ~90s of close games hold take
+    # fouls, FT contests, and trailing-team gambles that inflate scoring
+    # independent of adaptation. FORCED-core (window minus final 90s) must
+    # stay positive on its own.
+    period_end = np.where(df["period"] >= 5,
+                          REGULATION_SEC + (df["period"] - 4) * OT_SEC,
+                          REGULATION_SEC)
+    in_final = (period_end - df["start_elapsed"]) <= ENDGAME_EXCLUDE_SEC
+    tier3 = pd.Series(np.where(W & in_final, "FORCED-final90",
+                      np.where(W, "FORCED-core", "CHOSEN")), index=df.index)
+    core_poss = df.loc[ft & (tier3 == "FORCED-core"), "minutes_exposed"].sum() * POSS_PER_MIN
+    fin_poss = df.loc[ft & (tier3 == "FORCED-final90"), "minutes_exposed"].sum() * POSS_PER_MIN
+    rob = fit(df, tier=tier3,
+              extra_covs=pd.DataFrame({"clutch_window": W.astype(float).to_numpy()}))
+    rob_tbl = coef_rows(rob, ["foul_trouble[FORCED-core]",
+                              "foul_trouble[FORCED-final90]",
+                              "foul_trouble[CHOSEN]", "clutch_window"])
+    rc = rob.loc["foul_trouble[FORCED-core]"]
+    lines.append(f"## Endgame-ritual robustness (final {ENDGAME_EXCLUDE_SEC}s "
+                 f"split out; DiD spec)")
+    lines.append(f"FORCED-core: {core_poss:,.0f} poss | "
+                 f"FORCED-final90: {fin_poss:,.0f} poss")
+    lines.append(rob_tbl.round(2).to_string())
+    lines.append("")
+
     # tier-level split if every FORCED cell holds enough exposure
     total_min = df.groupby("player_id")["minutes_exposed"].sum()
     fouls = df.groupby("player_id")["fouls_in_window"].sum()
@@ -177,9 +204,10 @@ def run() -> None:
     lines.append("")
 
     # verdict per the decision rule, on the raw FORCED estimate, cross-checked
-    # against the DiD; qualitative disagreement -> ambiguous, stop and report
+    # against the DiD and the endgame-ritual robustness spec; qualitative
+    # disagreement -> ambiguous, stop and report
     raw_pos = kf["coef"] / kf["se"] >= 2
-    did_pos = df_["coef"] / df_["se"] >= 2
+    did_pos = (df_["coef"] / df_["se"] >= 2) and (rc["coef"] / rc["se"] >= 2)
     raw_zero = kf["coef"] * 48 <= 1.0  # ~0 or negative on the per-48 scale
     did_zero = df_["coef"] * 48 <= 1.0
     if raw_pos and did_pos:
@@ -213,6 +241,8 @@ def run() -> None:
         "raw_chosen_per48": kc["coef"] * 48, "raw_diff_t": diff_t,
         "did_forced_per48": df_["coef"] * 48, "did_forced_t": df_["coef"] / df_["se"],
         "did_chosen_per48": dc_["coef"] * 48, "did_diff_t": did_diff_t,
+        "core_per48": rc["coef"] * 48, "core_t": rc["coef"] / rc["se"],
+        "core_poss": round(core_poss),
         "verdict": verdict,
     }, indent=1))
     print("\n".join(lines))

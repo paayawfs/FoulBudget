@@ -19,6 +19,14 @@ foul_trouble[CHOSEN]   3.94  0.64  6.15
 clutch_window          2.74  1.07  2.57
 DiD difference FORCED - CHOSEN: +7.50 per 48, t = 1.92
 
+## Endgame-ritual robustness (final 90s split out; DiD spec)
+FORCED-core: 2,010 poss | FORCED-final90: 304 poss
+                              per48   se48     t
+foul_trouble[FORCED-core]      5.58   4.12  1.36
+foul_trouble[FORCED-final90]  50.18  10.29  4.88
+foul_trouble[CHOSEN]           3.94   0.64  6.15
+clutch_window                  2.74   1.07  2.57
+
 ## Foul-rate tier x FORCED/CHOSEN cell sizes (possessions)
 CHOSEN|high-foul    38579.0
 CHOSEN|low-foul     16700.0
@@ -46,4 +54,4 @@ foul trouble. The DiD spec (window main effect included; the
 foul_trouble[FORCED] coefficient is then the within-clutch foul-trouble
 shift) mitigates this and is the cleaner number.
 
-VERDICT: FORCED kappa-bar significantly positive in both specs — adaptation is real; the estimated-kappa headline stands with B0 as its identification defense.
+VERDICT: AMBIGUOUS — the raw and DiD specs do not agree (or FORCED kappa-bar is positive but not significant). Stop and review before changing any paper language.

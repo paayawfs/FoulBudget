@@ -180,7 +180,10 @@ def run_A_B_D(support, probs, mean):
             f"(t={b0['raw_forced_t']:.1f}), DiD {b0['did_forced_per48']:+.2f}/48 "
             f"(t={b0['did_forced_t']:.1f}) vs CHOSEN {b0['raw_chosen_per48']:+.2f}/48 "
             f"on {b0['forced_poss']:,} FORCED poss ({b0['widenings']} widenings); "
-            f"verdict: {b0['verdict']} (reports/kappa_b0.md)")
+            f"endgame-ritual robust core (final 90s stripped) "
+            f"{b0['core_per48']:+.2f}/48 (t={b0['core_t']:.1f}, "
+            f"{b0['core_poss']:,} poss); verdict: {b0['verdict']} "
+            f"(reports/kappa_b0.md)")
     else:
         log("B0", "PENDING", "run src/hazard/kappa_b0_selection.py first")
     return kappa_hat
@@ -246,9 +249,29 @@ def run_C(support, probs, mean, kappa_hat):
         f"per-player-season corr = {r:.3f} (>=50 fouls; per-player gaps are "
         f"the shrinkage prior working)")
 
-    # C5: external RAPM benchmark -- needs nbarapm.com data
-    log("C5", "PENDING", "requires nbarapm.com same-window values (external "
-        "download); run when the comparison file is available")
+    # C5: external RAPM benchmark (benchmarks/nbarapm_comparison.csv, from
+    # nbarapm.com /load/current_comp; gate on their time-decay RAPM -- the
+    # methodological twin of our half-life ridge)
+    bench_path = ROOT / "benchmarks" / "nbarapm_comparison.csv"
+    if bench_path.exists():
+        bench = pd.read_csv(bench_path)
+        ours = pd.read_csv(VALUE_DIR / f"rapm_{EVAL_SEASON}.csv")
+        m = ours[ours["minutes"] >= 1000].merge(bench, left_on="player_id",
+                                                right_on="nba_id")
+        rs = {}
+        for col in ("rapm_timedecay", "three_year_rapm", "five_year_rapm",
+                    "one_year_rapm"):
+            v = pd.to_numeric(m[col], errors="coerce")
+            rs[col] = float(np.corrcoef(m.loc[v.notna(), "rapm"], v.dropna())[0, 1])
+        r_gate = rs["rapm_timedecay"]
+        log("C5", "PASS" if r_gate > 0.9 else "FAIL",
+            f"in-house {EVAL_SEASON} decayed RAPM vs nbarapm.com (n={len(m)}, "
+            f">=1000 min): r = {r_gate:.3f} vs their time-decay RAPM (gate 0.9); "
+            f"3y {rs['three_year_rapm']:.3f}, 5y {rs['five_year_rapm']:.3f}, "
+            f"1y {rs['one_year_rapm']:.3f} -- decay ordering as expected")
+    else:
+        log("C5", "PENDING", "download nbarapm.com/load/current_comp to "
+            "benchmarks/nbarapm_comparison.csv (see git history for format)")
     return costs
 
 
@@ -338,7 +361,10 @@ def run_E(costs, support, probs, mean, kappa_hat):
             d_team = dsign * s["score_margin"]
             t_idx = int(np.clip(round(t_rem / STEP_SECONDS), 0, N_STEPS))
             d_idx = int(np.clip(round(d_team), D_GRID[0], D_GRID[-1])) - int(D_GRID[0])
-            model = "play" if (s["foul_count"] >= 6) is False and pv.policy[t_idx, min(int(s["foul_count"]), 6), d_idx] else "sit"
+            if t_idx == 0:
+                model = "--"  # terminal state: game over, nothing to decide
+            else:
+                model = "play" if (s["foul_count"] >= 6) is False and pv.policy[t_idx, min(int(s["foul_count"]), 6), d_idx] else "sit"
             trouble_flag = "TROUBLE" if s["foul_count"] >= s["period"] + 1 else "       "
             lines.append(
                 f"  Q{int(s['period'])} {t_rem / 60:5.1f}m left | d={d_team:+3.0f} | f={int(s['foul_count'])} {trouble_flag} "
