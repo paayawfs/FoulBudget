@@ -34,6 +34,52 @@ claims decision in Phase E.
 
 ---
 
+## Phase B0 — Selection check (identification defense for κ̄)
+
+The pooled κ̄ > 0 is measured on coach-selected exposure: coaches choose who
+plays through foul trouble. B0 asks how much of κ̄ survives where the coach
+has no real choice. This blocks the paper's central claim — run it before
+the abstract locks the headline.
+
+**Design** (src/hazard/kappa_b0_selection.py → reports/kappa_b0.md +
+summary row in VALIDATION.md):
+
+1. Split all foul-trouble possessions in the behavioral window into:
+   - **FORCED**: final 5.0 minutes of regulation (or any OT) with score
+     margin within one possession (|d| ≤ 3), player's delta48 in the top
+     half of rotation players (≥ 500 min) that season. Benching is not a
+     live option there; these minutes are minimally coach-selected. (Under
+     Q+1, OT contributes no foul-trouble exposure — trouble in period p
+     requires p+1 ≥ 6 fouls — so FORCED foul-trouble mass is late-Q4
+     five-foul spells.)
+   - **CHOSEN**: every other foul-trouble possession.
+   Cutoffs are named constants. If FORCED holds fewer than ~2,000
+   foul-trouble possessions, widen margin to |d| ≤ 6, then the window to
+   the final 7 minutes, logging each widening. Report subsample sizes
+   prominently.
+2. Estimate pooled κ̄ separately on FORCED and CHOSEN with the same spell
+   WLS as v1/v2 (global columns only, no per-player deviations): point
+   estimates, SEs, difference with t-stat. Tier-level split (foul-rate
+   low/mid/high) on each subsample if cell sizes permit.
+3. **Known confound, note either way:** FORCED minutes are high-leverage
+   end-game minutes; intensity/effort differs from average minutes
+   independent of foul trouble. Mitigation: also estimate the same
+   FORCED-window performance shift for NON-foul-trouble players and
+   difference it out (regression adds the window main effect; the
+   foul-trouble × window coefficient then reads as the within-clutch
+   foul-trouble shift). That DiD estimate is the cleaner number.
+4. **Decision rule (no thumb on the scale):**
+   - FORCED κ̄ remains significantly positive → adaptation is real; the
+     estimated-kappa headline (2.05 wins) stands with B0 as its
+     identification defense.
+   - FORCED κ̄ ~0 or negative → the positive pooled κ̄ is substantially
+     selection; the defensible headline shifts toward the κ = 0 floor
+     (0.65 wins), paper language changes, and every downstream artifact
+     it touches (headline table, per-player cost tables, top-20 lists)
+     gets flagged.
+
+---
+
 ## Phase B — Model specification (recommended: extend the RAPM regression)
 
 **Core idea: κ estimation is one design-matrix extension away from
