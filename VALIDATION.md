@@ -31,6 +31,8 @@ kappa negative enough that delta + kappa < 0 in foul trouble.
 | E3 | EYEBALL | stars with strongest backups (delta should compress): |
 | E4 | EYEBALL | case studies: top-decile-delta starters benched >=6 min after Q+1 trouble in games decided by <=5: |
 | E5 | EYEBALL | game 22500203, G. Antetokounmpo (delta +8.5/48, lam 2.6/36) |
+| E6 | EYEBALL | per-player WP cost of convention (2025, >=5 occurrences, n = 211; total_pp_k0 and kappa_share give the kappa=0 floor per player): |
+| E7 | EYEBALL | wins lost per season to the convention by team (2025, estimated kappa and kappa=0; occurrences located at the team they happened for, traded players split): |
 
 ## Artifacts
 ### E1 (EYEBALL)
@@ -112,6 +114,135 @@ game 22500203, G. Antetokounmpo (delta +8.5/48, lam 2.6/36)
   Q4  12.0m left | d= -9 | f=3         | coach: on  5.5m (foul) | model: play
   Q4   6.5m left | d= -2 | f=4         | coach: on  6.5m (foul) | model: play
   Q4   0.0m left | d= +2 | f=5 TROUBLE | coach: on  0.0m (game_end) | model: sit
+```
+
+### E6 (EYEBALL)
+```
+per-player WP cost of convention (2025, >=5 occurrences, n = 211; total_pp_k0 and kappa_share give the kappa=0 floor per player):
+top 20 by per occurrence (mean_pp):
+                 name  mean_pp  total_pp  total_pp_k0  kappa_share  count  delta48
+             M. Smart     4.79     43.14        16.42         0.62      9     3.61
+            E. Mobley     4.67     37.37         6.33         0.83      8     1.57
+     G. Antetokounmpo     4.50     27.00        15.63         0.42      6     8.49
+S. Gilgeous-Alexander     4.49     31.45        17.10         0.46      7     7.21
+        V. Wembanyama     4.35     60.86        31.90         0.48     14     6.56
+        J. Champagnie     4.33     21.66         5.30         0.76      5     2.39
+            P. George     4.27     29.90         7.68         0.74      7     2.27
+            D. Booker     4.15     53.98        17.75         0.67     13     3.15
+             J. Allen     4.07     32.59        10.11         0.69      8     2.79
+          C. Holmgren     4.07     20.36         7.56         0.63      5     3.69
+             J. Suggs     3.96     55.40        13.89         0.75     14     2.55
+            L. Dončić     3.90     50.71        18.46         0.64     13     3.84
+          O. Ighodaro     3.86     73.37        19.21         0.74     19     2.25
+             S. Curry     3.85     19.27         5.04         0.74      5     2.58
+             H. Jones     3.82     61.12        22.56         0.63     16     4.07
+            S. Sharpe     3.82     22.91         3.06         0.87      6    -0.32
+            D. Brooks     3.74    112.20         6.94         0.94     30     0.50
+        Z. Williamson     3.72     18.61         4.56         0.75      5     2.39
+             A. Green     3.71     25.96         8.96         0.65      7     3.33
+           A. Edwards     3.68     18.39         2.36         0.87      5     1.19
+bottom 20 by per occurrence (mean_pp):
+        name  mean_pp  total_pp  total_pp_k0  kappa_share  count  delta48
+J. McDaniels     0.50      5.54         0.26         0.95     11    -0.61
+    I. Zubac     0.69      3.45         0.53         0.85      5     1.55
+     J. Huff     0.87      9.56         0.94         0.90     11    -0.68
+    M. Peavy     0.92      5.53         0.38         0.93      6     0.71
+R. Westbrook     0.95      5.71         3.41         0.40      6    -2.22
+   J. Randle     0.97      4.87         0.00         1.00      5    -0.23
+   B. Hyland     0.98      5.88         0.84         0.86      6    -0.54
+   P. Watson     1.05      7.38         1.88         0.74      7    -0.91
+    J. Fears     1.07      5.37         3.95         0.26      5    -1.44
+   J. Harden     1.16      5.82         0.00         1.00      5     0.01
+  M. Raynaud     1.20      7.21         5.08         0.30      6    -3.00
+ N. Clifford     1.27      6.35         1.60         0.75      5     1.99
+ J. Clarkson     1.28      7.67         5.51         0.28      6    -2.00
+ A. Mitchell     1.30      6.51         0.48         0.93      5     0.40
+    J. Brown     1.32     13.20         5.86         0.56     10    -1.64
+   S. Castle     1.32     26.48         5.74         0.78     20    -1.14
+   A. Sengun     1.37     23.34         4.36         0.81     17    -0.89
+  O. Okongwu     1.37     27.48         4.41         0.84     20     0.97
+  G. Bitadze     1.41      9.88         1.04         0.89      7    -0.69
+   A. Newell     1.42      7.11         4.55         0.36      5    -2.94
+top 20 by season total (total_pp):
+          name  mean_pp  total_pp  total_pp_k0  kappa_share  count  delta48
+     D. Brooks     3.74    112.20         6.94         0.94     30     0.50
+   O. Ighodaro     3.86     73.37        19.21         0.74     19     2.25
+       D. Bane     3.64     72.76        24.22         0.67     20     3.26
+     K. George     3.36     70.60        14.12         0.80     21     1.86
+ K. Filipowski     2.53     65.88        11.36         0.83     26     1.60
+ C. Cunningham     3.23     64.68        14.53         0.78     20     2.08
+      N. Jokić     3.51     63.13        37.73         0.40     18     8.37
+      H. Jones     3.82     61.12        22.56         0.63     16     4.07
+ V. Wembanyama     4.35     60.86        31.90         0.48     14     6.56
+ W. Carter Jr.     2.52     60.40        11.31         0.81     24     1.61
+   A. Thompson     3.48     55.76        16.50         0.70     16     2.98
+      J. Suggs     3.96     55.40        13.89         0.75     14     2.55
+     D. Booker     4.15     53.98        17.75         0.67     13     3.15
+   D. Robinson     3.01     51.21        13.95         0.73     17     2.34
+     L. Dončić     3.90     50.71        18.46         0.64     13     3.84
+    J. LaRavia     2.63     49.97        30.53         0.39     19    -1.92
+   D. Cardwell     2.31     48.52        14.52         0.70     21     2.87
+     T. Camara     2.40     47.95        14.06         0.71     20     2.53
+     D. Sharpe     3.40     47.66        17.40         0.63     14     4.32
+J. Jackson Jr.     2.49     44.79        13.13         0.71     18     2.71
+bottom 20 by season total (total_pp):
+         name  mean_pp  total_pp  total_pp_k0  kappa_share  count  delta48
+     I. Zubac     0.69      3.45         0.53         0.85      5     1.55
+    J. Randle     0.97      4.87         0.00         1.00      5    -0.23
+     J. Fears     1.07      5.37         3.95         0.26      5    -1.44
+     M. Peavy     0.92      5.53         0.38         0.93      6     0.71
+ J. McDaniels     0.50      5.54         0.26         0.95     11    -0.61
+ R. Westbrook     0.95      5.71         3.41         0.40      6    -2.22
+    J. Harden     1.16      5.82         0.00         1.00      5     0.01
+    B. Hyland     0.98      5.88         0.84         0.86      6    -0.54
+  N. Clifford     1.27      6.35         1.60         0.75      5     1.99
+  A. Mitchell     1.30      6.51         0.48         0.93      5     0.40
+    A. Newell     1.42      7.11         4.55         0.36      5    -2.94
+   M. Raynaud     1.20      7.21         5.08         0.30      6    -3.00
+    P. Watson     1.05      7.38         1.88         0.74      7    -0.91
+  J. Clarkson     1.28      7.67         5.51         0.28      6    -2.00
+R. Dillingham     1.56      7.78         4.26         0.45      5    -1.99
+     T. Eason     1.78      8.89         0.71         0.92      5     0.55
+      J. Huff     0.87      9.56         0.94         0.90     11    -0.68
+   G. Bitadze     1.41      9.88         1.04         0.89      7    -0.69
+     B. Saraf     1.65      9.89         6.27         0.37      6    -2.37
+    N. Tomlin     2.00     10.00         4.29         0.57      5    -1.36
+```
+
+### E7 (EYEBALL)
+```
+wins lost per season to the convention by team (2025, estimated kappa and kappa=0; occurrences located at the team they happened for, traded players split):
+team  wins_est  occurrences  wins_k0
+ PHX      3.65          108     0.91
+ UTA      3.42          124     1.22
+ DET      3.30          124     1.22
+ WAS      3.24          116     0.83
+ ORL      3.02          103     1.03
+ MEM      2.88          103     0.77
+ BKN      2.66           97     0.78
+ LAL      2.35           80     0.98
+ CLE      2.28           82     0.74
+ SAS      2.23           85     0.78
+ GSW      2.13           82     0.50
+ POR      2.08           87     0.57
+ DEN      2.02           86     0.95
+ PHI      2.01           88     0.64
+ NOP      2.00           76     0.64
+ OKC      1.99           71     0.69
+ TOR      1.91           85     0.47
+ BOS      1.67           70     0.74
+ NYK      1.65           78     0.41
+ LAC      1.62           73     0.42
+ MIL      1.62           65     0.67
+ ATL      1.57           74     0.50
+ HOU      1.53           71     0.54
+ DAL      1.46           60     0.22
+ MIA      1.44           52     0.42
+ SAC      1.29           70     0.43
+ CHI      1.26           56     0.42
+ MIN      1.15           59     0.20
+ CHA      1.10           46     0.32
+ IND      0.94           52     0.33
 ```
 
 <!-- session-log -->

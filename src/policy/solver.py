@@ -190,6 +190,7 @@ def evaluate_convention_cost(support, probs, mean_step, kappa: float) -> pd.Data
                    - pv.lookup("conv", t_rem, int(r["foul_count"]), d_team))
             rows.append({
                 "game_id": r["game_id"], "player_id": r["player_id"],
+                "team": r["team"],
                 "delta": r["delta"], "foul_count": int(r["foul_count"]),
                 "period": int(r["period"]), "cost_wp": gap,
             })
