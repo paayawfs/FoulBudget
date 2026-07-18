@@ -20,6 +20,7 @@ kappa negative enough that delta + kappa < 0 in foul trouble.
 | B2 | PASS | max |V(f=6)| difference across delta=0 vs 0.20: 0.00e+00 (expect 0 -- absorbing) |
 | B3 | PASS | max convention cost at |d|>=28 with <=12 min left: 0.073pp (expect ~0; over all t it is 5.32pp -- early 28-point deficits are ~1.6 sigma from even, not saturated) |
 | B4 | PASS | max |W(d)+W(-d)-1| on lattice: 0.0009 (tolerance 0.03; steps de-meaned, residual skew only) |
+| B0 | PASS | FORCED (last 5 min, |d|<=3, top-half delta) kappa-bar +14.11/48 (t=3.8), DiD +11.44/48 (t=3.0) vs CHOSEN +3.93/48 on 2,314 FORCED poss (0 widenings); verdict: stands (reports/kappa_b0.md) |
 | C1 | PASS | max |sum(weights) - 1| over player-seasons: 2.00e-15 |
 | C2 | PASS | negative WP costs among 2,423 occurrences: 0 (min = 0.00e+00) |
 | C3 | PASS | kappa_i shrinkage: sd(dev) 0.44 (<25 FT poss) -> 2.15 (>=250) per48, max thin-sample |dev| = 1.51; FT-weighted mean kappa_i +4.22 vs v1 pooled +4.22; OOS gain over pooled = +0.031% of held-out MSE (lambda_kappa = 640) |

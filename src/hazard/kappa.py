@@ -54,9 +54,11 @@ def load() -> pd.DataFrame:
     return df
 
 
-def fit(df: pd.DataFrame, tier: pd.Series = None):
+def fit(df: pd.DataFrame, tier: pd.Series = None, extra_covs: pd.DataFrame = None):
     """tier: optional per-row group label; expands the foul_trouble column
-    into one column per tier (used by the Phase A grouping audit)."""
+    into one column per tier (used by the Phase A grouping audit).
+    extra_covs: optional additional covariate columns (used by the B0
+    selection check's window main effect)."""
     if tier is not None:
         covs = pd.DataFrame({
             f"foul_trouble[{v}]": df["foul_trouble"] * (tier == v).astype(float)
@@ -70,6 +72,9 @@ def fit(df: pd.DataFrame, tier: pd.Series = None):
             "abs_margin": df["abs_margin"],
             "home": df["home"],
         })
+    if extra_covs is not None:
+        for c in extra_covs.columns:
+            covs[c] = extra_covs[c].to_numpy()
     for p in (2, 3, 4, 5):
         covs[f"p_{p}"] = (df["period"].clip(upper=5) == p).astype(float)
 

@@ -166,6 +166,23 @@ def run_A_B_D(support, probs, mean):
     log("B4", "PASS" if asym < 0.03 else "FAIL",
         f"max |W(d)+W(-d)-1| on lattice: {asym:.4f} (tolerance 0.03; "
         f"steps de-meaned, residual skew only)")
+
+    # B0: selection check on kappa-bar (src/hazard/kappa_b0_selection.py
+    # writes the meta this row summarizes; full artifact in reports/kappa_b0.md)
+    import json
+    b0_path = HAZARD_DIR / "kappa_b0_meta.json"
+    if b0_path.exists():
+        b0 = json.loads(b0_path.read_text())
+        status = {"stands": "PASS", "selection": "FAIL", "ambiguous": "EYEBALL"}[b0["verdict"]]
+        log("B0", status,
+            f"FORCED (last {b0['window_sec'] / 60:g} min, |d|<={b0['margin']}, "
+            f"top-half delta) kappa-bar {b0['raw_forced_per48']:+.2f}/48 "
+            f"(t={b0['raw_forced_t']:.1f}), DiD {b0['did_forced_per48']:+.2f}/48 "
+            f"(t={b0['did_forced_t']:.1f}) vs CHOSEN {b0['raw_chosen_per48']:+.2f}/48 "
+            f"on {b0['forced_poss']:,} FORCED poss ({b0['widenings']} widenings); "
+            f"verdict: {b0['verdict']} (reports/kappa_b0.md)")
+    else:
+        log("B0", "PENDING", "run src/hazard/kappa_b0_selection.py first")
     return kappa_hat
 
 
@@ -327,6 +344,39 @@ def run_E(costs, support, probs, mean, kappa_hat):
                 f"  Q{int(s['period'])} {t_rem / 60:5.1f}m left | d={d_team:+3.0f} | f={int(s['foul_count'])} {trouble_flag} "
                 f"| coach: on {s['minutes_exposed']:4.1f}m ({s['ended_by']}) | model: {model}")
         log("E5", "EYEBALL", "\n".join(lines))
+
+    # E6/E7: per-player and per-team convention-cost tables, produced by
+    # src/analysis/bench_cost_tables.py (estimated kappa and kappa=0;
+    # kappa_share marks rows provisional on the B0 selection check)
+    ana = ROOT / "data" / "processed" / "analysis"
+    pp_path = ana / "bench_cost_per_player.csv"
+    tm_path = ana / "bench_cost_per_team.csv"
+    if pp_path.exists():
+        pp = pd.read_csv(pp_path)
+        pp = pp[pp["count"] >= 5]
+        cols = ["name", "mean_pp", "total_pp", "total_pp_k0", "kappa_share",
+                "count", "delta48"]
+        parts = [f"per-player WP cost of convention ({EVAL_SEASON}, >=5 "
+                 f"occurrences, n = {len(pp)}; total_pp_k0 and kappa_share "
+                 f"give the kappa=0 floor per player):"]
+        for label, col in (("per occurrence (mean_pp)", "mean_pp"),
+                           ("season total (total_pp)", "total_pp")):
+            parts.append(f"top 20 by {label}:")
+            parts.append(pp.nlargest(20, col)[cols].round(2).to_string(index=False))
+            parts.append(f"bottom 20 by {label}:")
+            parts.append(pp.nsmallest(20, col)[cols].round(2).to_string(index=False))
+        log("E6", "EYEBALL", "\n".join(parts))
+    else:
+        log("E6", "PENDING", "run src/analysis/bench_cost_tables.py first")
+    if tm_path.exists():
+        tm = pd.read_csv(tm_path)
+        log("E7", "EYEBALL",
+            f"wins lost per season to the convention by team ({EVAL_SEASON}, "
+            f"estimated kappa and kappa=0; occurrences located at the team "
+            f"they happened for, traded players split):\n"
+            + tm.round(2).to_string(index=False))
+    else:
+        log("E7", "PENDING", "run src/analysis/bench_cost_tables.py first")
 
 
 def write_md():
