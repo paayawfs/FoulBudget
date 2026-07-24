@@ -4,6 +4,15 @@ Frozen 2026-07-24 at tag `results-freeze-v1`. Validation suite: 27 checks,
 0 FAIL. Nothing below changes without unfreezing, and any unfreeze must be
 logged here.
 
+**Update 2026-07-24 (post-tag, pre-abstract):** E6/E7 were regenerated with
+kappa = 0 as the PRIMARY ranking column instead of estimated kappa, per the
+B0 selection-driven verdict — the estimated-kappa ordering was quoting a
+finding (the size and identity of the biggest kappa-financed stories) that
+does not survive its own identification check. The "Player and team
+slices" section below reflects the re-ranked tables. Core estimates and
+the headline are unchanged; only which players/teams the paper points to
+changed. 27 checks, 0 FAIL after the rerun.
+
 ## Headline (verdict-dependent framing, B0 = selection-driven)
 
 **Conventional foul-trouble benching costs at least 0.65 wins per team per
@@ -37,21 +46,36 @@ the foul-RATE adaptation (players in trouble foul at 0.64x their base
 hazard) is estimated on within-player variation and stands; the
 performance kappa does not survive forced exposure and is descriptive.
 
-## Player and team slices (E6/E7, tag `cost-tables-v1`, re-labeled at `b0-final`)
+## Player and team slices (E6/E7, tag `cost-tables-v1`, RE-RANKED at kappa = 0)
 
-Defensible numbers are the kappa = 0 columns (total_pp_k0, wins_k0).
+Per the B0 selection-driven verdict, kappa = 0 is now the PRIMARY ranking
+(unsuffixed mean_pp/total_pp/wins columns); estimated-kappa columns
+(mean_pp_est/total_pp_est/wins_est) are a non-defensible as-managed
+appendix only, never a ranking basis. Re-running E6/E7 at kappa = 0
+reshuffles several stories from the pre-B0 as-managed ordering:
 - Largest defensible season cost: N. Jokić, 37.7pp total at kappa = 0
-  (63.1pp as-managed, 18 occurrences).
-- V. Wembanyama: 31.9pp at kappa = 0 (60.9pp as-managed, 14 occurrences,
-  4.35pp per occurrence as-managed).
-- Cautionary relabel: D. Brooks tops the as-managed table (112.2pp) but
-  94% of it is the kappa boost; his defensible total is 6.9pp.
-- Cheapest occurrences: J. McDaniels (0.50pp per occurrence as-managed,
-  0.26pp season total at kappa = 0) and J. Huff (0.87pp; 0.94pp at k0):
-  benching a low-delta player costs roughly nothing, which is the
-  convention working as intended at the bottom of the rotation.
-- Team extremes (2025-26): PHX loses most (3.65 wins as-managed, 0.91 at
-  kappa = 0); IND least (0.94 / 0.33).
+  (18 occurrences; 63.1pp / 3.51pp-per-occurrence as-managed, appendix
+  only).
+- Largest defensible per-occurrence cost: G. Antetokounmpo, 2.60pp
+  (6 occurrences; 4.50pp as-managed, appendix only). V. Wembanyama, the
+  as-managed per-occurrence leader (4.35pp), drops to 6th at kappa = 0
+  (2.28pp) — still 2nd by season total (31.9pp, 14 occurrences).
+- **Reversal:** D. Brooks topped the as-managed season-total table
+  (112.2pp, kappa_share 0.94) but falls to 99th of 358 players at kappa = 0
+  — his defensible season total is 6.9pp. He was the single largest
+  kappa-financed story in the pre-B0 tables and does not survive the
+  selection-driven verdict.
+- Cheapest occurrences (unchanged in kind): several bench players floor at
+  0.00pp defensible cost even with a large as-managed appendix number
+  (e.g. J. Wells 0.00pp defensible vs 41.2pp as-managed) — at kappa = 0 the
+  model finds no policy gap for these low-delta players, so 100% of their
+  as-managed cost was the boost.
+- **Team ordering reversal:** DET and UTA tie for the most wins lost at
+  kappa = 0 (1.22 each, 124 occurrences apiece), not PHX. PHX was the
+  as-managed leader (3.65 wins) but drops to 6th at kappa = 0 (0.91).
+  MIN loses the fewest at kappa = 0 (0.20, appendix 1.15); IND was the
+  as-managed floor (0.94 appendix) but is not the kappa=0 floor
+  (IND sits at 0.33; MIN is now the floor).
 
 ## Opponent-strength robustness (E8, tag `e8-opponent-split`): PASS
 

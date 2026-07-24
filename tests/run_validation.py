@@ -378,23 +378,23 @@ def run_E(costs, support, probs, mean, kappa_hat):
 
     # E6/E7: per-player and per-team convention-cost tables, produced by
     # src/analysis/bench_cost_tables.py. B0 verdict: selection-driven --
-    # estimated-kappa columns are descriptive (as-managed accounting);
-    # total_pp_k0 / wins_k0 (kappa=0 floor) carry the causal claim
+    # kappa = 0 is now the PRIMARY ranking (mean_pp/total_pp/wins,
+    # unsuffixed); _est columns are the non-defensible as-managed appendix
     ana = ROOT / "data" / "processed" / "analysis"
     pp_path = ana / "bench_cost_per_player.csv"
     tm_path = ana / "bench_cost_per_team.csv"
     if pp_path.exists():
         pp = pd.read_csv(pp_path)
         pp = pp[pp["count"] >= 5]
-        cols = ["name", "mean_pp", "total_pp", "total_pp_k0", "kappa_share",
-                "count", "delta48"]
+        cols = ["name", "mean_pp", "total_pp", "mean_pp_est", "total_pp_est",
+                "kappa_share", "count", "delta48"]
         parts = [f"per-player WP cost of convention ({EVAL_SEASON}, >=5 "
                  f"occurrences, n = {len(pp)}; B0 verdict selection-driven: "
-                 f"mean_pp/total_pp are descriptive as-managed accounting, "
-                 f"total_pp_k0 (kappa=0 floor) is the causally defensible "
-                 f"number per player):"]
-        for label, col in (("per occurrence (mean_pp)", "mean_pp"),
-                           ("season total (total_pp)", "total_pp")):
+                 f"mean_pp/total_pp (kappa=0) are the PRIMARY, causally "
+                 f"defensible ranking; mean_pp_est/total_pp_est are the "
+                 f"non-defensible as-managed appendix per player):"]
+        for label, col in (("per occurrence (mean_pp, kappa=0)", "mean_pp"),
+                           ("season total (total_pp, kappa=0)", "total_pp")):
             parts.append(f"top 20 by {label}:")
             parts.append(pp.nlargest(20, col)[cols].round(2).to_string(index=False))
             parts.append(f"bottom 20 by {label}:")
@@ -406,10 +406,10 @@ def run_E(costs, support, probs, mean, kappa_hat):
         tm = pd.read_csv(tm_path)
         log("E7", "EYEBALL",
             f"wins lost per season to the convention by team ({EVAL_SEASON}; "
-            f"B0 verdict selection-driven: wins_est is descriptive as-managed "
-            f"accounting, wins_k0 (kappa=0 floor) is the causally defensible "
-            f"number; occurrences located at the team they happened for, "
-            f"traded players split):\n"
+            f"B0 verdict selection-driven: wins (kappa=0) is the PRIMARY, "
+            f"causally defensible ranking, sorted descending; wins_est is "
+            f"the non-defensible as-managed appendix; occurrences located "
+            f"at the team they happened for, traded players split):\n"
             + tm.round(2).to_string(index=False))
     else:
         log("E7", "PENDING", "run src/analysis/bench_cost_tables.py first")

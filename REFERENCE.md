@@ -150,9 +150,11 @@ Consequences, binding on all materials:
   managed, never causal claims. The causal headline is the κ = 0 floor
   (0.65 wins/team/season, 0.80pp per occurrence).
 - Artifacts re-labeled accordingly: the headline table (VALIDATION.md
-  re-estimation section), E6 per-player cost tables (mean_pp/total_pp
-  descriptive; total_pp_k0 defensible), E7 team slice (wins_est
-  descriptive; wins_k0 defensible), and the kappa_share column (now reads
+  re-estimation section), E6 per-player cost tables (mean_pp/total_pp are
+  now the kappa=0 PRIMARY ranking; mean_pp_est/total_pp_est are the
+  non-defensible as-managed appendix), E7 team slice (wins is the kappa=0
+  PRIMARY ranking; wins_est is the appendix), and the kappa_share column
+  (now reads
   as the share of each cost that is NOT causally defensible).
 - Abstract and paper lead with the κ = 0 floor.
 
