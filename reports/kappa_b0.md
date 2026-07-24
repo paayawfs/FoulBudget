@@ -89,3 +89,26 @@ after rung 2, the verdict is "underpowered, not contradicted" permanently.
 Same spell-WLS machinery and DiD spec as above (clutch-window main effect
 included; raw split reported alongside). Report subsample sizes at each
 rung, point estimates, SEs, t-stats, and which verdict fired.
+<!-- widened-results -->
+
+## Widened rerun — results (protocol above, registered before running)
+
+### Rung 1: final 7 min, |d| <= 6, top-half delta, final-90s one-possession spells excluded
+FORCED: 5,859 poss (1,205 spells) | EXCLUDED-final90: 304 poss | CHOSEN: 75,652 poss
+
+raw split (per 48; naive SEs, difference t ignores covariance):
+                                per48   se48     t
+foul_trouble[FORCED]             1.79   2.34  0.77
+foul_trouble[EXCLUDED-final90]  52.83  10.23  5.16
+foul_trouble[CHOSEN]             4.21   0.66  6.41
+difference FORCED - CHOSEN: -2.42 per 48, t = -0.99
+
+DiD spec (window main effect included; foul_trouble[FORCED] = within-clutch foul-trouble shift — the verdict number):
+                                per48   se48     t
+foul_trouble[FORCED]            -0.59   2.41 -0.24
+foul_trouble[EXCLUDED-final90]  50.45  10.25  4.92
+foul_trouble[CHOSEN]             4.25   0.66  6.46
+clutch_window                    2.61   0.64  4.11
+DiD difference FORCED - CHOSEN: -4.84 per 48, t = -1.94
+
+VERDICT (pre-registered threshold): SELECTION-DRIVEN — FORCED-core point estimate at or below zero. The positive pooled kappa is substantially selection; the kappa-boosted numbers are not causally defensible. Downstream artifacts flagged: headline table, E6 per-player tables, E7 team slice, kappa_share column.

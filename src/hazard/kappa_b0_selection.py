@@ -1,20 +1,32 @@
-"""B0 selection check per HIERARCHICAL_KAPPA_PLAN.md Phase B0.
+"""B0 selection check per HIERARCHICAL_KAPPA_PLAN.md Phase B0 — widened
+rerun per the pre-registered protocol in reports/kappa_b0.md (2026-07-24).
 
 Splits foul-trouble exposure into FORCED (late, close, high-delta player --
-benching is not a live option) and CHOSEN (everything else), estimates pooled
-kappa-bar on each with the same spell WLS as v1/v2, and reports the
-difference. The DiD spec adds the window main effect (clutch indicator for
-ALL spells), so foul_trouble[FORCED] reads as the within-clutch foul-trouble
-shift net of the general clutch intensity effect -- the cleaner number.
+benching is not a live option), EXCLUDED-final90 (the take-foul/FT-contest
+window: spell starts in the final 90 seconds of regulation/OT while within
+one possession, |d| <= 3 — its own regression cell so it contaminates
+neither side), and CHOSEN (everything else). Pooled kappa-bar estimated on
+each with the same spell WLS as v1/v2. The DiD spec adds the window main
+effect (clutch indicator for ALL spells in the window), so
+foul_trouble[FORCED] reads as the within-clutch foul-trouble shift net of
+the general clutch intensity effect -- the verdict number.
+
+Rung ladder (pre-registered, stopping rule enforced in code):
+  rung 1: final 7.0 min, |d| <= 6, top-half delta, final-90s exclusion
+  rung 2: final 9.0 min, same margin/exclusion — ONLY if rung 1 is
+          ambiguous (positive but t < 2 in the DiD spec)
+  after rung 2 the result stands as-is; ambiguous after rung 2 =
+  "underpowered, not contradicted" permanently.
 
 Spells are classified by their START state (a spell straddling the window
-boundary counts where it starts); exposure spells at 5 fouls are short, so
-the misclassified mass is small. Under Q+1, OT contributes no foul-trouble
+boundary counts where it starts). Under Q+1, OT contributes no foul-trouble
 exposure (trouble in period p needs p+1 >= 6 fouls), so FORCED foul-trouble
 mass is late-Q4 five-foul spells; OT still feeds the window main effect.
 
-Writes reports/kappa_b0.md and data/processed/hazard/kappa_b0_meta.json
-(consumed by tests/run_validation.py for the B0 summary row).
+Appends the results section to reports/kappa_b0.md (pre-registration and
+prior-run text above the marker are preserved) and writes
+data/processed/hazard/kappa_b0_meta.json (consumed by
+tests/run_validation.py for the B0 summary row).
 """
 
 import json
@@ -34,36 +46,16 @@ HAZARD_DIR = ROOT / "data" / "processed" / "hazard"
 OUT_MD = ROOT / "reports" / "kappa_b0.md"
 POSS_PER_MIN = 100 / 48
 REGULATION_SEC = 2880
-
-FORCED_WINDOW_SEC = 300.0    # final 5.0 minutes of regulation
-FORCED_MARGIN = 3            # one possession
-ROTATION_MIN_MINUTES = 500   # rotation floor for the delta split
-MIN_FORCED_POSS = 2000       # widen the window below this
-MIN_TIER_CELL_POSS = 500     # tier-split cells need at least this
-ENDGAME_EXCLUDE_SEC = 90     # robustness: strip the intentional-fouling window
 OT_SEC = 300
-# widening ladder per the plan: margin first, then the time window
-LADDER = ((FORCED_WINDOW_SEC, FORCED_MARGIN),
-          (FORCED_WINDOW_SEC, 6),
-          (420.0, 6))
 
-INTERPRETATION = """\
-Decision rule (logged verbatim per HIERARCHICAL_KAPPA_PLAN Phase B0, no
-thumb on the scale):
-- If FORCED kappa-bar remains significantly positive: adaptation is real;
-  the estimated-kappa headline (2.05 wins) stands with this as its
-  identification defense.
-- If FORCED kappa-bar is ~0 or negative: the positive pooled kappa is
-  substantially selection; the defensible headline shifts toward the
-  kappa=0 floor (0.65 wins), and paper language must change. Flag every
-  downstream artifact this touches (headline table, per-player cost
-  tables, top-20 lists).
+ROTATION_MIN_MINUTES = 500   # rotation floor for the delta split
+EXCL_SEC = 90                # take-foul/FT-contest window (contamination check)
+EXCL_MARGIN = 3              # ... within one possession
+# pre-registered rung ladder: (window_sec, margin); rung 2 only if rung 1
+# is ambiguous with a positive point estimate. No rung 3, ever.
+RUNGS = ((420.0, 6), (540.0, 6))
 
-Known confound either way: FORCED minutes are high-leverage end-game
-minutes, so intensity/effort differs from average minutes independent of
-foul trouble. The DiD spec (window main effect included; the
-foul_trouble[FORCED] coefficient is then the within-clutch foul-trouble
-shift) mitigates this and is the cleaner number."""
+RESULTS_MARKER = "<!-- widened-results -->"
 
 
 def top_half_flags(df: pd.DataFrame) -> pd.Series:
@@ -90,6 +82,17 @@ def window_mask(df: pd.DataFrame, window_sec: float, margin: int) -> pd.Series:
     return clutch_time & (df["score_margin"].abs() <= margin) & df["top_half"]
 
 
+def final90_mask(df: pd.DataFrame) -> pd.Series:
+    """Exact exclusion definition from the endgame-ritual contamination
+    check: spell starts in the final EXCL_SEC of regulation/OT while within
+    one possession."""
+    period_end = np.where(df["period"] >= 5,
+                          REGULATION_SEC + (df["period"] - 4) * OT_SEC,
+                          REGULATION_SEC)
+    in_final = (period_end - df["start_elapsed"]) <= EXCL_SEC
+    return in_final & (df["score_margin"].abs() <= EXCL_MARGIN)
+
+
 def coef_rows(res: pd.DataFrame, names) -> pd.DataFrame:
     out = res.loc[list(names)].copy()
     out["per48"] = out["coef"] * 48
@@ -98,154 +101,118 @@ def coef_rows(res: pd.DataFrame, names) -> pd.DataFrame:
     return out[["per48", "se48", "t"]]
 
 
+def run_rung(df: pd.DataFrame, ft: pd.Series, window_sec: float, margin: int):
+    W = window_mask(df, window_sec, margin)
+    excl = W & final90_mask(df)
+    tier = pd.Series(np.where(excl, "EXCLUDED-final90",
+                     np.where(W, "FORCED", "CHOSEN")), index=df.index)
+
+    poss = {v: df.loc[ft & (tier == v), "minutes_exposed"].sum() * POSS_PER_MIN
+            for v in ("FORCED", "EXCLUDED-final90", "CHOSEN")}
+    n_spells = int((ft & (tier == "FORCED")).sum())
+
+    names = ["foul_trouble[FORCED]", "foul_trouble[EXCLUDED-final90]",
+             "foul_trouble[CHOSEN]"]
+    raw = fit(df, tier=tier)
+    did = fit(df, tier=tier,
+              extra_covs=pd.DataFrame({"clutch_window": W.astype(float).to_numpy()}))
+
+    lines = [f"### Rung {'1' if window_sec == RUNGS[0][0] else '2'}: "
+             f"final {window_sec / 60:g} min, |d| <= {margin}, top-half delta, "
+             f"final-{EXCL_SEC}s one-possession spells excluded"]
+    lines.append(f"FORCED: {poss['FORCED']:,.0f} poss ({n_spells:,} spells) | "
+                 f"EXCLUDED-final90: {poss['EXCLUDED-final90']:,.0f} poss | "
+                 f"CHOSEN: {poss['CHOSEN']:,.0f} poss")
+    lines.append("")
+
+    kf, kc = raw.loc["foul_trouble[FORCED]"], raw.loc["foul_trouble[CHOSEN]"]
+    diff_t = (kf["coef"] - kc["coef"]) / np.hypot(kf["se"], kc["se"])
+    lines.append("raw split (per 48; naive SEs, difference t ignores covariance):")
+    lines.append(coef_rows(raw, names).round(2).to_string())
+    lines.append(f"difference FORCED - CHOSEN: "
+                 f"{(kf['coef'] - kc['coef']) * 48:+.2f} per 48, t = {diff_t:.2f}")
+    lines.append("")
+
+    df_, dc_ = did.loc["foul_trouble[FORCED]"], did.loc["foul_trouble[CHOSEN]"]
+    did_diff_t = (df_["coef"] - dc_["coef"]) / np.hypot(df_["se"], dc_["se"])
+    lines.append("DiD spec (window main effect included; foul_trouble[FORCED] "
+                 "= within-clutch foul-trouble shift — the verdict number):")
+    lines.append(coef_rows(did, names + ["clutch_window"]).round(2).to_string())
+    lines.append(f"DiD difference FORCED - CHOSEN: "
+                 f"{(df_['coef'] - dc_['coef']) * 48:+.2f} per 48, t = {did_diff_t:.2f}")
+    lines.append("")
+
+    t_did = df_["coef"] / df_["se"]
+    if df_["coef"] <= 0:
+        verdict = "selection-driven"
+    elif t_did >= 2:
+        verdict = "defended"
+    else:
+        verdict = "ambiguous"
+
+    ke = did.loc["foul_trouble[EXCLUDED-final90]"]
+    meta = {
+        "window_sec": window_sec, "margin": margin,
+        "forced_poss": round(poss["FORCED"]),
+        "excl_poss": round(poss["EXCLUDED-final90"]),
+        "chosen_poss": round(poss["CHOSEN"]),
+        "raw_forced_per48": kf["coef"] * 48, "raw_forced_t": kf["coef"] / kf["se"],
+        "raw_chosen_per48": kc["coef"] * 48,
+        "did_forced_per48": df_["coef"] * 48, "did_forced_t": t_did,
+        "did_chosen_per48": dc_["coef"] * 48, "did_diff_t": did_diff_t,
+        "excl_per48": ke["coef"] * 48, "excl_t": ke["coef"] / ke["se"],
+    }
+    return verdict, lines, meta
+
+
 def run() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     df = load()
     df["top_half"] = top_half_flags(df)
     ft = df["foul_trouble"] == 1
 
-    widenings = []
-    for window_sec, margin in LADDER:
-        W = window_mask(df, window_sec, margin)
-        forced_poss = df.loc[ft & W, "minutes_exposed"].sum() * POSS_PER_MIN
-        widenings.append(f"window {window_sec / 60:g} min, |d| <= {margin}: "
-                         f"{forced_poss:,.0f} FORCED foul-trouble possessions")
-        if forced_poss >= MIN_FORCED_POSS:
-            break
-    chosen_poss = df.loc[ft & ~W, "minutes_exposed"].sum() * POSS_PER_MIN
-    n_forced_spells = int((ft & W).sum())
+    all_lines = [RESULTS_MARKER, "", "## Widened rerun — results "
+                 "(protocol above, registered before running)", ""]
+    for rung_idx, (window_sec, margin) in enumerate(RUNGS, start=1):
+        verdict, lines, meta = run_rung(df, ft, window_sec, margin)
+        all_lines += lines
+        if rung_idx == 1 and not (verdict == "ambiguous"
+                                  and meta["did_forced_per48"] > 0):
+            break  # stopping rule: rung 2 only on ambiguous-but-positive
+    meta["rung"] = rung_idx
+    meta["verdict"] = verdict
 
-    lines = [f"# B0 selection check — FORCED vs CHOSEN foul-trouble exposure "
-             f"({len(ANALYSIS_SEASONS)} seasons: {ANALYSIS_SEASONS[0]}–{ANALYSIS_SEASONS[-1]})", ""]
-    lines.append("## Subsample sizes (report these before anything else)")
-    for msg in widenings:
-        lines.append(f"- {msg}")
-    lines.append(f"- final window: last {window_sec / 60:g} min of regulation "
-                 f"(or OT), |d| <= {margin}, top-half delta48 among rotation "
-                 f"players (>= {ROTATION_MIN_MINUTES} min)")
-    lines.append(f"- FORCED: {forced_poss:,.0f} possessions ({n_forced_spells:,} spells) | "
-                 f"CHOSEN: {chosen_poss:,.0f} possessions")
-    lines.append("")
-
-    tier = pd.Series(np.where(W, "FORCED", "CHOSEN"), index=df.index)
-    raw = fit(df, tier=tier)
-    did = fit(df, tier=tier,
-              extra_covs=pd.DataFrame({"clutch_window": W.astype(float).to_numpy()}))
-
-    raw_tbl = coef_rows(raw, ["foul_trouble[FORCED]", "foul_trouble[CHOSEN]"])
-    kf, kc = raw.loc["foul_trouble[FORCED]"], raw.loc["foul_trouble[CHOSEN]"]
-    diff = (kf["coef"] - kc["coef"]) * 48
-    diff_t = (kf["coef"] - kc["coef"]) / np.hypot(kf["se"], kc["se"])
-    lines.append("## Raw split (per 48; naive SEs, difference t ignores covariance)")
-    lines.append(raw_tbl.round(2).to_string())
-    lines.append(f"difference FORCED - CHOSEN: {diff:+.2f} per 48, t = {diff_t:.2f}")
-    lines.append("")
-
-    did_tbl = coef_rows(did, ["foul_trouble[FORCED]", "foul_trouble[CHOSEN]",
-                              "clutch_window"])
-    df_, dc_ = did.loc["foul_trouble[FORCED]"], did.loc["foul_trouble[CHOSEN]"]
-    did_diff_t = (df_["coef"] - dc_["coef"]) / np.hypot(df_["se"], dc_["se"])
-    lines.append("## DiD spec (window main effect included; foul_trouble[FORCED]")
-    lines.append("## = within-clutch foul-trouble shift — the cleaner number)")
-    lines.append(did_tbl.round(2).to_string())
-    lines.append(f"DiD difference FORCED - CHOSEN: "
-                 f"{(df_['coef'] - dc_['coef']) * 48:+.2f} per 48, t = {did_diff_t:.2f}")
-    lines.append("")
-
-    # endgame-ritual robustness: the final ~90s of close games hold take
-    # fouls, FT contests, and trailing-team gambles that inflate scoring
-    # independent of adaptation. FORCED-core (window minus final 90s) must
-    # stay positive on its own.
-    period_end = np.where(df["period"] >= 5,
-                          REGULATION_SEC + (df["period"] - 4) * OT_SEC,
-                          REGULATION_SEC)
-    in_final = (period_end - df["start_elapsed"]) <= ENDGAME_EXCLUDE_SEC
-    tier3 = pd.Series(np.where(W & in_final, "FORCED-final90",
-                      np.where(W, "FORCED-core", "CHOSEN")), index=df.index)
-    core_poss = df.loc[ft & (tier3 == "FORCED-core"), "minutes_exposed"].sum() * POSS_PER_MIN
-    fin_poss = df.loc[ft & (tier3 == "FORCED-final90"), "minutes_exposed"].sum() * POSS_PER_MIN
-    rob = fit(df, tier=tier3,
-              extra_covs=pd.DataFrame({"clutch_window": W.astype(float).to_numpy()}))
-    rob_tbl = coef_rows(rob, ["foul_trouble[FORCED-core]",
-                              "foul_trouble[FORCED-final90]",
-                              "foul_trouble[CHOSEN]", "clutch_window"])
-    rc = rob.loc["foul_trouble[FORCED-core]"]
-    lines.append(f"## Endgame-ritual robustness (final {ENDGAME_EXCLUDE_SEC}s "
-                 f"split out; DiD spec)")
-    lines.append(f"FORCED-core: {core_poss:,.0f} poss | "
-                 f"FORCED-final90: {fin_poss:,.0f} poss")
-    lines.append(rob_tbl.round(2).to_string())
-    lines.append("")
-
-    # tier-level split if every FORCED cell holds enough exposure
-    total_min = df.groupby("player_id")["minutes_exposed"].sum()
-    fouls = df.groupby("player_id")["fouls_in_window"].sum()
-    per36 = (fouls / total_min * 36).reindex(df["player_id"]).values
-    foul_tier = pd.Series(pd.qcut(per36, 3, labels=["low-foul", "mid-foul", "high-foul"]),
-                          index=df.index).astype(str)
-    cross = tier + "|" + foul_tier
-    cell_poss = (df.loc[ft, "minutes_exposed"].groupby(cross[ft]).sum() * POSS_PER_MIN)
-    lines.append("## Foul-rate tier x FORCED/CHOSEN cell sizes (possessions)")
-    lines.append(cell_poss.round(0).to_string())
-    forced_cells = cell_poss[cell_poss.index.str.startswith("FORCED")]
-    if forced_cells.min() >= MIN_TIER_CELL_POSS:
-        res_t = fit(df, tier=cross)
-        tbl = coef_rows(res_t, [i for i in res_t.index if i.startswith("foul_trouble")])
-        lines.append("")
-        lines.append("## Tier-level split (per 48)")
-        lines.append(tbl.round(2).to_string())
+    if verdict == "defended":
+        vtext = ("VERDICT (pre-registered threshold): DEFENDED — FORCED-core "
+                 "kappa-bar positive with t >= 2 in the DiD spec. Adaptation "
+                 "survives where the coach has no real choice; the "
+                 "estimated-kappa headline may cite B0 as its identification "
+                 "defense.")
+    elif verdict == "selection-driven":
+        vtext = ("VERDICT (pre-registered threshold): SELECTION-DRIVEN — "
+                 "FORCED-core point estimate at or below zero. The positive "
+                 "pooled kappa is substantially selection; the kappa-boosted "
+                 "numbers are not causally defensible. Downstream artifacts "
+                 "flagged: headline table, E6 per-player tables, E7 team "
+                 "slice, kappa_share column.")
+    elif rung_idx == 2:
+        vtext = ("VERDICT (pre-registered threshold, after rung 2): "
+                 "UNDERPOWERED, NOT CONTRADICTED — permanent per the "
+                 "stopping rule. FORCED-core kappa-bar is positive but "
+                 "t < 2. REFERENCE.md keeps the 'kappa is an upper bound on "
+                 "the causal effect' posture; the abstract leads with the "
+                 "0.65 floor.")
     else:
-        lines.append(f"tier split SKIPPED: smallest FORCED cell "
-                     f"{forced_cells.min():,.0f} < {MIN_TIER_CELL_POSS} possessions")
-    lines.append("")
+        vtext = ("VERDICT (pre-registered threshold): AMBIGUOUS at rung 1 "
+                 "with a non-positive trigger state — rung 2 not run.")
+    all_lines += [vtext, ""]
 
-    lines.append("## Interpretation")
-    lines.append(INTERPRETATION)
-    lines.append("")
-
-    # verdict per the decision rule, on the raw FORCED estimate, cross-checked
-    # against the DiD and the endgame-ritual robustness spec; qualitative
-    # disagreement -> ambiguous, stop and report
-    raw_pos = kf["coef"] / kf["se"] >= 2
-    did_pos = (df_["coef"] / df_["se"] >= 2) and (rc["coef"] / rc["se"] >= 2)
-    raw_zero = kf["coef"] * 48 <= 1.0  # ~0 or negative on the per-48 scale
-    did_zero = df_["coef"] * 48 <= 1.0
-    if raw_pos and did_pos:
-        verdict = "stands"
-        vtext = ("VERDICT: FORCED kappa-bar significantly positive in both "
-                 "specs — adaptation is real; the estimated-kappa headline "
-                 "stands with B0 as its identification defense.")
-    elif raw_zero and did_zero:
-        verdict = "selection"
-        vtext = ("VERDICT: FORCED kappa-bar ~0/negative in both specs — the "
-                 "pooled kappa is substantially selection; the defensible "
-                 "headline shifts toward the kappa=0 floor (0.65 wins). "
-                 "FLAGGED downstream artifacts: headline table "
-                 "(VALIDATION.md re-estimation section), per-player cost "
-                 "tables and top-20 lists (E6), team slice (E7), threshold "
-                 "maps at estimated kappa.")
-    else:
-        verdict = "ambiguous"
-        vtext = ("VERDICT: AMBIGUOUS — the raw and DiD specs do not agree "
-                 "(or FORCED kappa-bar is positive but not significant). "
-                 "Stop and review before changing any paper language.")
-    lines.append(vtext)
-
-    OUT_MD.parent.mkdir(parents=True, exist_ok=True)
-    OUT_MD.write_text("\n".join(lines), encoding="utf-8")
-    (HAZARD_DIR / "kappa_b0_meta.json").write_text(json.dumps({
-        "window_sec": window_sec, "margin": margin,
-        "forced_poss": round(forced_poss), "chosen_poss": round(chosen_poss),
-        "widenings": len(widenings) - 1,
-        "raw_forced_per48": kf["coef"] * 48, "raw_forced_t": kf["coef"] / kf["se"],
-        "raw_chosen_per48": kc["coef"] * 48, "raw_diff_t": diff_t,
-        "did_forced_per48": df_["coef"] * 48, "did_forced_t": df_["coef"] / df_["se"],
-        "did_chosen_per48": dc_["coef"] * 48, "did_diff_t": did_diff_t,
-        "core_per48": rc["coef"] * 48, "core_t": rc["coef"] / rc["se"],
-        "core_poss": round(core_poss),
-        "verdict": verdict,
-    }, indent=1))
-    print("\n".join(lines))
+    text = OUT_MD.read_text(encoding="utf-8")
+    if RESULTS_MARKER in text:  # idempotent: replace prior results section
+        text = text.split(RESULTS_MARKER, 1)[0].rstrip() + "\n"
+    OUT_MD.write_text(text + "\n" + "\n".join(all_lines), encoding="utf-8")
+    (HAZARD_DIR / "kappa_b0_meta.json").write_text(json.dumps(meta, indent=1))
+    print("\n".join(all_lines))
     print(f"\nwrote {OUT_MD} and {HAZARD_DIR / 'kappa_b0_meta.json'}")
 
 

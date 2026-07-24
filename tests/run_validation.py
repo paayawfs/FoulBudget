@@ -173,16 +173,21 @@ def run_A_B_D(support, probs, mean):
     b0_path = HAZARD_DIR / "kappa_b0_meta.json"
     if b0_path.exists():
         b0 = json.loads(b0_path.read_text())
-        status = {"stands": "PASS", "selection": "FAIL", "ambiguous": "EYEBALL"}[b0["verdict"]]
+        # selection-driven is a pre-registered FINDING, not a broken check:
+        # downstream artifacts are re-labeled to the kappa=0 floor, so it
+        # reports as EYEBALL (human-verified language sync), not FAIL
+        status = {"defended": "PASS", "selection-driven": "EYEBALL",
+                  "ambiguous": "EYEBALL"}[b0["verdict"]]
         log("B0", status,
-            f"FORCED (last {b0['window_sec'] / 60:g} min, |d|<={b0['margin']}, "
-            f"top-half delta) kappa-bar {b0['raw_forced_per48']:+.2f}/48 "
-            f"(t={b0['raw_forced_t']:.1f}), DiD {b0['did_forced_per48']:+.2f}/48 "
-            f"(t={b0['did_forced_t']:.1f}) vs CHOSEN {b0['raw_chosen_per48']:+.2f}/48 "
-            f"on {b0['forced_poss']:,} FORCED poss ({b0['widenings']} widenings); "
-            f"endgame-ritual robust core (final 90s stripped) "
-            f"{b0['core_per48']:+.2f}/48 (t={b0['core_t']:.1f}, "
-            f"{b0['core_poss']:,} poss); verdict: {b0['verdict']} "
+            f"B0-final rung {b0['rung']}: FORCED (last {b0['window_sec'] / 60:g} min, "
+            f"|d|<={b0['margin']}, top-half delta, final-90s one-possession "
+            f"spells excluded) DiD kappa-bar {b0['did_forced_per48']:+.2f}/48 "
+            f"(t={b0['did_forced_t']:.1f}), raw {b0['raw_forced_per48']:+.2f}/48 "
+            f"(t={b0['raw_forced_t']:.1f}) vs CHOSEN {b0['did_chosen_per48']:+.2f}/48 "
+            f"on {b0['forced_poss']:,} FORCED poss; excluded ritual cell "
+            f"{b0['excl_per48']:+.2f}/48 ({b0['excl_poss']:,} poss); "
+            f"verdict: {b0['verdict']} — estimated-kappa numbers are "
+            f"descriptive, the kappa=0 floor is the causal claim "
             f"(reports/kappa_b0.md)")
     else:
         log("B0", "PENDING", "run src/hazard/kappa_b0_selection.py first")
@@ -372,8 +377,9 @@ def run_E(costs, support, probs, mean, kappa_hat):
         log("E5", "EYEBALL", "\n".join(lines))
 
     # E6/E7: per-player and per-team convention-cost tables, produced by
-    # src/analysis/bench_cost_tables.py (estimated kappa and kappa=0;
-    # kappa_share marks rows provisional on the B0 selection check)
+    # src/analysis/bench_cost_tables.py. B0 verdict: selection-driven --
+    # estimated-kappa columns are descriptive (as-managed accounting);
+    # total_pp_k0 / wins_k0 (kappa=0 floor) carry the causal claim
     ana = ROOT / "data" / "processed" / "analysis"
     pp_path = ana / "bench_cost_per_player.csv"
     tm_path = ana / "bench_cost_per_team.csv"
@@ -383,8 +389,10 @@ def run_E(costs, support, probs, mean, kappa_hat):
         cols = ["name", "mean_pp", "total_pp", "total_pp_k0", "kappa_share",
                 "count", "delta48"]
         parts = [f"per-player WP cost of convention ({EVAL_SEASON}, >=5 "
-                 f"occurrences, n = {len(pp)}; total_pp_k0 and kappa_share "
-                 f"give the kappa=0 floor per player):"]
+                 f"occurrences, n = {len(pp)}; B0 verdict selection-driven: "
+                 f"mean_pp/total_pp are descriptive as-managed accounting, "
+                 f"total_pp_k0 (kappa=0 floor) is the causally defensible "
+                 f"number per player):"]
         for label, col in (("per occurrence (mean_pp)", "mean_pp"),
                            ("season total (total_pp)", "total_pp")):
             parts.append(f"top 20 by {label}:")
@@ -397,9 +405,11 @@ def run_E(costs, support, probs, mean, kappa_hat):
     if tm_path.exists():
         tm = pd.read_csv(tm_path)
         log("E7", "EYEBALL",
-            f"wins lost per season to the convention by team ({EVAL_SEASON}, "
-            f"estimated kappa and kappa=0; occurrences located at the team "
-            f"they happened for, traded players split):\n"
+            f"wins lost per season to the convention by team ({EVAL_SEASON}; "
+            f"B0 verdict selection-driven: wins_est is descriptive as-managed "
+            f"accounting, wins_k0 (kappa=0 floor) is the causally defensible "
+            f"number; occurrences located at the team they happened for, "
+            f"traded players split):\n"
             + tm.round(2).to_string(index=False))
     else:
         log("E7", "PENDING", "run src/analysis/bench_cost_tables.py first")

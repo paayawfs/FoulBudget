@@ -20,7 +20,7 @@ kappa negative enough that delta + kappa < 0 in foul trouble.
 | B2 | PASS | max |V(f=6)| difference across delta=0 vs 0.20: 0.00e+00 (expect 0 -- absorbing) |
 | B3 | PASS | max convention cost at |d|>=28 with <=12 min left: 0.073pp (expect ~0; over all t it is 5.32pp -- early 28-point deficits are ~1.6 sigma from even, not saturated) |
 | B4 | PASS | max |W(d)+W(-d)-1| on lattice: 0.0009 (tolerance 0.03; steps de-meaned, residual skew only) |
-| B0 | EYEBALL | FORCED (last 5 min, |d|<=3, top-half delta) kappa-bar +14.11/48 (t=3.8), DiD +11.44/48 (t=3.0) vs CHOSEN +3.93/48 on 2,314 FORCED poss (0 widenings); endgame-ritual robust core (final 90s stripped) +5.58/48 (t=1.4, 2,010 poss); verdict: ambiguous (reports/kappa_b0.md) |
+| B0 | EYEBALL | B0-final rung 1: FORCED (last 7 min, |d|<=6, top-half delta, final-90s one-possession spells excluded) DiD kappa-bar -0.59/48 (t=-0.2), raw +1.79/48 (t=0.8) vs CHOSEN +4.25/48 on 5,859 FORCED poss; excluded ritual cell +50.45/48 (304 poss); verdict: selection-driven — estimated-kappa numbers are descriptive, the kappa=0 floor is the causal claim (reports/kappa_b0.md) |
 | C1 | PASS | max |sum(weights) - 1| over player-seasons: 2.00e-15 |
 | C2 | PASS | negative WP costs among 2,423 occurrences: 0 (min = 0.00e+00) |
 | C3 | PASS | kappa_i shrinkage: sd(dev) 0.44 (<25 FT poss) -> 2.15 (>=250) per48, max thin-sample |dev| = 1.51; FT-weighted mean kappa_i +4.22 vs v1 pooled +4.22; OOS gain over pooled = +0.031% of held-out MSE (lambda_kappa = 640) |
@@ -31,8 +31,8 @@ kappa negative enough that delta + kappa < 0 in foul trouble.
 | E3 | EYEBALL | stars with strongest backups (delta should compress): |
 | E4 | EYEBALL | case studies: top-decile-delta starters benched >=6 min after Q+1 trouble in games decided by <=5: |
 | E5 | EYEBALL | game 22500203, G. Antetokounmpo (delta +8.5/48, lam 2.6/36) |
-| E6 | EYEBALL | per-player WP cost of convention (2025, >=5 occurrences, n = 211; total_pp_k0 and kappa_share give the kappa=0 floor per player): |
-| E7 | EYEBALL | wins lost per season to the convention by team (2025, estimated kappa and kappa=0; occurrences located at the team they happened for, traded players split): |
+| E6 | EYEBALL | per-player WP cost of convention (2025, >=5 occurrences, n = 211; B0 verdict selection-driven: mean_pp/total_pp are descriptive as-managed accounting, total_pp_k0 (kappa=0 floor) is the causally defensible number per player): |
+| E7 | EYEBALL | wins lost per season to the convention by team (2025; B0 verdict selection-driven: wins_est is descriptive as-managed accounting, wins_k0 (kappa=0 floor) is the causally defensible number; occurrences located at the team they happened for, traded players split): |
 
 ## Artifacts
 ### E1 (EYEBALL)
@@ -118,7 +118,7 @@ game 22500203, G. Antetokounmpo (delta +8.5/48, lam 2.6/36)
 
 ### E6 (EYEBALL)
 ```
-per-player WP cost of convention (2025, >=5 occurrences, n = 211; total_pp_k0 and kappa_share give the kappa=0 floor per player):
+per-player WP cost of convention (2025, >=5 occurrences, n = 211; B0 verdict selection-driven: mean_pp/total_pp are descriptive as-managed accounting, total_pp_k0 (kappa=0 floor) is the causally defensible number per player):
 top 20 by per occurrence (mean_pp):
                  name  mean_pp  total_pp  total_pp_k0  kappa_share  count  delta48
              M. Smart     4.79     43.14        16.42         0.62      9     3.61
@@ -211,7 +211,7 @@ R. Dillingham     1.56      7.78         4.26         0.45      5    -1.99
 
 ### E7 (EYEBALL)
 ```
-wins lost per season to the convention by team (2025, estimated kappa and kappa=0; occurrences located at the team they happened for, traded players split):
+wins lost per season to the convention by team (2025; B0 verdict selection-driven: wins_est is descriptive as-managed accounting, wins_k0 (kappa=0 floor) is the causally defensible number; occurrences located at the team they happened for, traded players split):
 team  wins_est  occurrences  wins_k0
  PHX      3.65          108     0.91
  UTA      3.42          124     1.22
