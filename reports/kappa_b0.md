@@ -112,3 +112,19 @@ clutch_window                    2.61   0.64  4.11
 DiD difference FORCED - CHOSEN: -4.84 per 48, t = -1.94
 
 VERDICT (pre-registered threshold): SELECTION-DRIVEN — FORCED-core point estimate at or below zero. The positive pooled kappa is substantially selection; the kappa-boosted numbers are not causally defensible. Downstream artifacts flagged: headline table, E6 per-player tables, E7 team slice, kappa_share column.
+
+## Final defensible headline framing (plain language)
+
+Conventional foul-trouble benching costs at least 0.65 wins per team per
+season (0.80 percentage points of win probability per occurrence, 2,423
+occurrences evaluated in 2025-26). That floor is computed at kappa = 0 and
+does not depend on any claim about how well players perform while carrying
+foul trouble. The larger figure of 2.05 wins per team per season uses the
+estimated kappa of +4.2 per 48, and this check shows that estimate is
+selection, not adaptation: when we look only at minutes where coaches had
+no real benching option, the foul-trouble performance boost disappears
+(-0.6 per 48, indistinguishable from zero). So the paper's causal claim is
+the floor. The 2.05 figure may be reported only as descriptive accounting
+of what teams experience under current management, in which coaches already
+select who plays through foul trouble, and must never be framed as the
+causal cost of the convention.

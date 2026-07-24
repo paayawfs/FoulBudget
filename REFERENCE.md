@@ -137,6 +137,25 @@ net_rating_it = θ_i + κ · 1[foul_trouble_it] + controls + ε
 ```
 Foul trouble defined as fouls ≥ quarter + 1. Include player fixed effects and opponent controls. Report κ as an upper bound on the causal effect (foul trouble is not randomly assigned). Either result publishable: large κ partly vindicates convention; small κ means coaches burn wins.
 
+**B0 selection verdict (2026-07-24, pre-registered, FINAL — tag `b0-final`):
+SELECTION-DRIVEN.** The positive pooled κ̄ does not survive where the coach
+has no real choice: in FORCED exposure (final 7 minutes, |d| ≤ 6, top-half
+delta, take-foul/FT-contest window excluded; 5,859 possessions) the DiD
+κ̄ is −0.59 per 48 (t = −0.24) against +4.25 per 48 in CHOSEN exposure.
+The pooled κ̄ > 0 is substantially coach selection, not adaptation.
+Consequences, binding on all materials:
+- **κ-boosted numbers are not causally defensible.** The estimated-κ
+  headline (2.05 wins/team/season) and every quantity computed at
+  estimated κ are *descriptive* accounting of the convention as currently
+  managed, never causal claims. The causal headline is the κ = 0 floor
+  (0.65 wins/team/season, 0.80pp per occurrence).
+- Artifacts re-labeled accordingly: the headline table (VALIDATION.md
+  re-estimation section), E6 per-player cost tables (mean_pp/total_pp
+  descriptive; total_pp_k0 defensible), E7 team slice (wins_est
+  descriptive; wins_k0 defensible), and the kappa_share column (now reads
+  as the share of each cost that is NOT causally defensible).
+- Abstract and paper lead with the κ = 0 floor.
+
 **Estimation:** per-player independent κ is infeasible — foul-trouble stints are rare, and many rotation players log only a handful of foul-trouble minutes per season. Use hierarchical partial pooling: each player's κ shrunk toward a group-level estimate (group by position, role, or foul-rate tier — pick after seeing foul-trouble stint counts per player); heavily-observed players keep their own signal, thin-sample players lean on the group (precedent: Chu & Swartz). Describe in the paper as "player-level parameterization, hierarchically estimated."
 
 ### 3.5 Policy comparison (headline)
