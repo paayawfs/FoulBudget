@@ -414,6 +414,31 @@ def run_E(costs, support, probs, mean, kappa_hat):
     else:
         log("E7", "PENDING", "run src/analysis/bench_cost_tables.py first")
 
+    # E8: opponent-strength robustness split (src/analysis/opponent_split.py);
+    # pre-registered pass condition: mean cost per occurrence positive in
+    # every Panel A tercile at kappa = 0
+    import json
+    e8_path = ana / "e8_meta.json"
+    if e8_path.exists():
+        e8 = json.loads(e8_path.read_text())
+
+        def cells(panel):
+            return " | ".join(
+                f"{lab} n={panel[lab]['n']} est {panel[lab]['est']:.2f}pp "
+                f"k0 {panel[lab]['k0']:.2f}pp"
+                for lab in ("strong", "average", "weak"))
+        log("E8-A", "PASS" if e8["passed"] else "FAIL",
+            f"opponent team-season net-rating terciles "
+            f"({e8['n_occurrences']:,} occurrences): {cells(e8['panel_a'])} "
+            f"(pass condition: k0 positive in every tercile; "
+            f"reports/e8_opponent_split.md)")
+        log("E8-B", "EYEBALL",
+            f"opponent on-floor lineup RAPM terciles (secondary, correlates "
+            f"with score state; match rate {e8['match_rate']:.1%}): "
+            f"{cells(e8['panel_b'])}")
+    else:
+        log("E8-A", "PENDING", "run src/analysis/opponent_split.py first")
+
 
 def write_md():
     lines = [

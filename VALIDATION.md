@@ -33,6 +33,8 @@ kappa negative enough that delta + kappa < 0 in foul trouble.
 | E5 | EYEBALL | game 22500203, G. Antetokounmpo (delta +8.5/48, lam 2.6/36) |
 | E6 | EYEBALL | per-player WP cost of convention (2025, >=5 occurrences, n = 211; B0 verdict selection-driven: mean_pp/total_pp are descriptive as-managed accounting, total_pp_k0 (kappa=0 floor) is the causally defensible number per player): |
 | E7 | EYEBALL | wins lost per season to the convention by team (2025; B0 verdict selection-driven: wins_est is descriptive as-managed accounting, wins_k0 (kappa=0 floor) is the causally defensible number; occurrences located at the team they happened for, traded players split): |
+| E8-A | PASS | opponent team-season net-rating terciles (2,423 occurrences): strong n=808 est 2.52pp k0 0.79pp | average n=769 est 2.53pp k0 0.81pp | weak n=846 est 2.56pp k0 0.80pp (pass condition: k0 positive in every tercile; reports/e8_opponent_split.md) |
+| E8-B | EYEBALL | opponent on-floor lineup RAPM terciles (secondary, correlates with score state; match rate 100.0%): strong n=808 est 2.54pp k0 0.76pp | average n=807 est 2.57pp k0 0.83pp | weak n=808 est 2.50pp k0 0.80pp |
 
 ## Artifacts
 ### E1 (EYEBALL)
