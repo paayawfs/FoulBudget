@@ -55,3 +55,37 @@ foul_trouble[FORCED] coefficient is then the within-clutch foul-trouble
 shift) mitigates this and is the cleaner number.
 
 VERDICT: AMBIGUOUS — the raw and DiD specs do not agree (or FORCED kappa-bar is positive but not significant). Stop and review before changing any paper language.
+
+## Widened rerun — pre-registered protocol (2026-07-24, registered BEFORE running)
+
+The 2026-07-18 run above landed ambiguous: the endgame-ritual contamination
+check showed the final 90 seconds (take fouls, FT contests, trailing-team
+gambles) carry most of the FORCED signal, and the stripped core was positive
+but underpowered (+5.58/48, t = 1.4, 2,010 poss). The rerun below widens the
+window to recover power while ALWAYS excluding that contaminated stretch.
+Protocol and stopping rule are fixed here before any code runs.
+
+**Rung 1:** FORCED = spells starting in the final 7.0 minutes of regulation
+(or any OT), |d| <= 6, player's delta48 in the top half of rotation players
+(>= 500 min) that season, ALWAYS excluding spells starting in the final 90
+seconds of regulation/OT while within one possession (|d| <= 3) — the exact
+exclusion definition from the endgame-ritual contamination check above.
+Excluded spells form their own regression cell (as in the contamination
+check); they contaminate neither FORCED nor CHOSEN.
+
+**Rung 2** (run only if rung 1 is ambiguous AND its point estimate is still
+positive): extend the window to the final 9.0 minutes; same margin, same
+exclusion, nothing else changes.
+
+**STOPPING RULE:** after rung 2 the result stands as-is. No third widening,
+no cutoff adjustment, no alternative specifications. If it is ambiguous
+after rung 2, the verdict is "underpowered, not contradicted" permanently.
+
+**Decision thresholds (pre-registered, applied to the DiD spec):**
+- "defended" = FORCED-core kappa-bar positive with t >= 2 in the DiD spec
+- "ambiguous" = positive but t < 2
+- "selection-driven" = point estimate at or below zero
+
+Same spell-WLS machinery and DiD spec as above (clutch-window main effect
+included; raw split reported alongside). Report subsample sizes at each
+rung, point estimates, SEs, t-stats, and which verdict fired.
