@@ -24,7 +24,7 @@ EXPOSURE_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "exp
 HAZARD_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "hazard"
 import sys as _sys
 _sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from config import ANALYSIS_SEASONS as SEASONS
+from config import ANALYSIS_SEASONS as SEASONS, foul_trouble_threshold
 
 
 def load() -> pd.DataFrame:
@@ -36,7 +36,7 @@ def load() -> pd.DataFrame:
     df["player_season"] = df["player_id"].astype(str) + "_" + df["season"].astype(str)
     alphas = pd.read_csv(HAZARD_DIR / "alphas.csv", index_col=0)["alpha"]
     df["alpha_poisson"] = df["player_season"].map(alphas).fillna(alphas.mean())
-    df["foul_trouble"] = (df["foul_count"] >= df["period"] + 1).astype(float)
+    df["foul_trouble"] = (df["foul_count"] >= foul_trouble_threshold(df["period"])).astype(float)
     df["abs_margin"] = df["score_margin"].abs()
     for p in (2, 3, 4, 5):
         df[f"p_{p}"] = (df["period"].clip(upper=5) == p).astype(float)

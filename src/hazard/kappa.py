@@ -28,7 +28,7 @@ EXPOSURE_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "exp
 OUT_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "hazard"
 import sys as _sys
 _sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from config import ANALYSIS_SEASONS as SEASONS
+from config import ANALYSIS_SEASONS as SEASONS, foul_trouble_threshold
 
 
 def load() -> pd.DataFrame:
@@ -39,7 +39,7 @@ def load() -> pd.DataFrame:
     df = df[df["minutes_exposed"] > 0].copy()
     sign = np.where(df["side"] == "HOME", 1.0, -1.0)
     df["net_per_min"] = sign * df["margin_change"] / df["minutes_exposed"]
-    df["foul_trouble"] = (df["foul_count"] >= df["period"] + 1).astype(float)
+    df["foul_trouble"] = (df["foul_count"] >= foul_trouble_threshold(df["period"])).astype(float)
     df["abs_margin"] = df["score_margin"].abs()
     df["home"] = (df["side"] == "HOME").astype(float)
     df["player_season"] = df["player_id"].astype(str) + "_" + df["season"].astype(str)

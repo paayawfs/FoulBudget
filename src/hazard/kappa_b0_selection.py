@@ -19,9 +19,13 @@ Rung ladder (pre-registered, stopping rule enforced in code):
   "underpowered, not contradicted" permanently.
 
 Spells are classified by their START state (a spell straddling the window
-boundary counts where it starts). Under Q+1, OT contributes no foul-trouble
-exposure (trouble in period p needs p+1 >= 6 fouls), so FORCED foul-trouble
-mass is late-Q4 five-foul spells; OT still feeds the window main effect.
+boundary counts where it starts). Fixed 2026-07-26: foul trouble in OT used
+to be structurally unreachable (trouble in period p >= 5 needed p+1 >= 6
+fouls, i.e. disqualification) so FORCED foul-trouble mass was entirely
+late-Q4 five-foul spells; config.foul_trouble_threshold now caps the OT
+threshold at 5 fouls, so OT foul-trouble spells (a player at 5 fouls
+playing on into overtime) now contribute FORCED exposure too, on top of
+already feeding the window main effect.
 
 Appends the results section to reports/kappa_b0.md (pre-registration and
 prior-run text above the marker are preserved) and writes

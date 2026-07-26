@@ -4,6 +4,80 @@ Frozen 2026-07-24 at tag `results-freeze-v1`. Validation suite: 27 checks,
 0 FAIL. Nothing below changes without unfreezing, and any unfreeze must be
 logged here.
 
+**v2 update 2026-07-26 (tag `results-freeze-v2-ot-fix`, supersedes v1 —
+v1 content below is kept as-is for a direct diff):** fixed a bug in the
+foul-trouble definition. The threshold was `foul_count >= period + 1`
+everywhere (kappa estimation, B0, the DP's conventional policy, occurrence
+selection). In overtime (period >= 5) this requires >= 6 fouls, which is
+already disqualification — a player still on the floor could structurally
+never be flagged in foul trouble during OT. Fixed via one shared function,
+`config.foul_trouble_threshold(period) = min(period + 1, 5)` (regulation
+unchanged; OT capped at 5, one foul from fouling out), imported everywhere
+the threshold was previously duplicated. See REFERENCE.md SS3.4 for the
+full rationale.
+
+**Magnitude captured (measured before rerunning anything, across the full
+2021-22..2025-26 window):** 666 newly-captured foul-trouble spells, 1,601
+minutes, **3.92% of total foul-trouble exposure** (not a sub-1% footnote —
+material enough to move kappa and B0). 283 player-games get a foul-trouble
+occurrence that didn't exist under the old definition at all (their only
+qualifying state was in OT). Restricted to 2025-26 (the evaluation season):
+120 newly-captured spells, 64 brand-new player-game occurrences.
+
+**What moved and what didn't, and why:**
+- **kappa (pooled):** +4.22 -> **+3.98 per 48** (t: 6.7 -> 6.4). Real
+  movement — kappa estimation is a plain WLS regression on real
+  net-rating data with no DP involved, so it genuinely gains the
+  newly-captured OT exposure.
+- **Foul-rate hazard multiplier:** x0.641 -> **x0.647** (also a plain
+  regression, small movement in the same direction: less negative
+  adaptation once OT spells dilute the pooled estimate slightly).
+- **B0 verdict: unchanged (SELECTION-DRIVEN).** FORCED DiD kappa-bar moved
+  from -0.59/48 (t=-0.24, 5,859 poss) to **-1.96/48 (t=-0.93, 7,781 poss)**
+  — more negative, on a meaningfully larger FORCED sample (OT spells feed
+  FORCED exposure directly, since B0's clutch-window already treated all
+  OT time as clutch). The fix did not flip the finding; if anything it
+  strengthens it.
+- **kappa_v2 (per-player) OOS gain:** +0.031% -> +0.029% of held-out MSE.
+  Unchanged verdict (weak heterogeneity, pooled kappa-bar stands).
+- **Headline wins/team/season at kappa = 0 (the causal claim): 0.65 ->
+  0.65. Unchanged.** This is not a coincidence: confirmed directly in
+  `src/policy/solver.py` that the DP's time lattice (`N_STEPS = 2880 // 30`)
+  covers regulation only, and `period_of_step` clamps to period <= 4, so
+  the backward induction never represents OT at all. Any exposure spell
+  starting in OT gets `t_rem = 0` in `evaluate_convention_cost`, landing
+  on the terminal boundary state where `V_opt` and `V_conv` are identical
+  by construction — so every newly-captured OT occurrence contributes
+  `cost_wp = 0` exactly, regardless of kappa. Verified empirically: the
+  216-player E6 table is byte-identical at kappa = 0 to the pre-fix
+  numbers (Jokic 37.73pp, Wembanyama 31.90pp, Brooks 6.94pp/rank 99, all
+  unchanged) even though occurrence counts rose. This is a separate,
+  pre-existing structural limitation (the DP was never built to model
+  overtime), not fixed here — out of scope for a threshold-only
+  correction and flagged, not patched, per the project's frozen-scope
+  rule. A future session would need an OT-aware time grid, an OT margin-
+  step distribution, and OT hazard multipliers (currently `hazard_table`
+  only has columns for periods 1-4) to close this gap.
+- **Headline wins/team/season at estimated kappa (descriptive only): 2.05
+  -> 1.95.** Tracks kappa's small decrease; per-occurrence WP cost 2.54pp
+  -> 2.36pp. Occurrence count: 2,423 -> 2,485 (+62, mostly zero-cost as
+  explained above).
+- **E8 opponent-strength split: still PASS.** kappa=0 mean cost per
+  occurrence by opponent-net-rating tercile: 0.76 / 0.79 / 0.78pp
+  (strong/average/weak), still flat, same conclusion.
+- **Team/player rankings at kappa = 0 (E6/E7): unchanged in substance.**
+  Same top players (Jokic, Wembanyama, LaRavia), same team order (DET/UTA
+  tied at 1.22, PHX 6th at 0.91, MIN the floor at 0.20) — the underlying
+  kappa=0 numbers per existing occurrence didn't move, so rankings built
+  on them don't either. `wins_est`/`mean_pp_est`/`total_pp_est` appendix
+  columns shrank slightly across the board, tracking the smaller kappa.
+
+**Bottom line for the abstract:** the causal claim (0.65 wins/team/season
+at kappa = 0) is robust to this bug fix — it did not move. The descriptive
+estimated-kappa numbers shifted modestly downward (2.05 -> 1.95 wins). The
+B0 selection-driven verdict, already the paper's operative finding, is
+if anything reinforced. No headline framing language needs to change.
+
 **Update 2026-07-24 (post-tag, pre-abstract):** E6/E7 were regenerated with
 kappa = 0 as the PRIMARY ranking column instead of estimated kappa, per the
 B0 selection-driven verdict — the estimated-kappa ordering was quoting a

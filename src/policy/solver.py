@@ -12,9 +12,10 @@ the focal team's perspective, player fouls 0..6. Two actions:
     fouls arrive at hazard lambda(f, period); f = 6 locks in sit forever.
   - terminal: V(0, d) = 1[d > 0] + 0.5*1[d = 0].
 
-The conventional policy pi_c (sit iff f >= period + 1) is valued on the same
-dynamics; cost of convention = V* - V^c averaged over foul-trouble states
-actually observed in the held-out season's exposure table (Section 3.5).
+The conventional policy pi_c (sit iff f >= foul_trouble_threshold(period),
+config.py -- quarter + 1 in regulation, capped at 5 in OT) is valued on the
+same dynamics; cost of convention = V* - V^c averaged over foul-trouble
+states actually observed in the held-out season's exposure table (Section 3.5).
 
 ponytail: margin steps are state-independent (no leverage-dependent pace/
 variance) and home advantage is ignored (symmetric-perspective W); both are
@@ -45,7 +46,7 @@ N_FOULS = 7                              # 0..6
 PLAY_TIE_EPS = 1e-12                     # indifference resolves to play
 import sys as _sys
 _sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from config import ANALYSIS_SEASONS, EVAL_SEASON
+from config import ANALYSIS_SEASONS, EVAL_SEASON, foul_trouble_threshold
 TRAIN_SEASONS = tuple(s for s in ANALYSIS_SEASONS if s != EVAL_SEASON)
 
 
@@ -132,7 +133,7 @@ class PolicyValues:
                     self.V_opt[t, f] = ev_sit_o
                     self.V_conv[t, f] = ev_sit_c
                     continue
-                in_trouble = f >= period + 1
+                in_trouble = f >= foul_trouble_threshold(period)
                 drift = (delta + (kappa if in_trouble else 0.0)) * STEP_SECONDS / 60
                 lam = lam_base * mult[f, period]
                 p_foul = 1 - np.exp(-lam * STEP_SECONDS / 60)
@@ -143,7 +144,7 @@ class PolicyValues:
                 play = ev_play_o >= ev_sit_o - PLAY_TIE_EPS
                 self.policy[t, f] = play
                 self.V_opt[t, f] = np.where(play, ev_play_o, ev_sit_o)
-                self.V_conv[t, f] = ev_play_c if f < period + 1 else ev_sit_c
+                self.V_conv[t, f] = ev_play_c if f < foul_trouble_threshold(period) else ev_sit_c
             # pin absorbing blowout edges (consistent with either terminal)
             self.V_opt[t, :, 0] = term[:, 0]
             self.V_opt[t, :, -1] = term[:, -1]
@@ -160,7 +161,7 @@ def evaluate_convention_cost(support, probs, mean_step, kappa: float) -> pd.Data
     """V* - V^c at the first observed foul-trouble state per player-game."""
     exp_df = pd.read_parquet(EXPOSURE_DIR / f"{EVAL_SEASON}.parquet")
     exp_df = exp_df[exp_df["minutes_exposed"] > 0]
-    trouble = exp_df[exp_df["foul_count"] >= exp_df["period"] + 1]
+    trouble = exp_df[exp_df["foul_count"] >= foul_trouble_threshold(exp_df["period"])]
     first = trouble.sort_values("start_elapsed").groupby(["game_id", "player_id"]).first().reset_index()
 
     delta = pd.read_csv(VALUE_DIR / f"delta_{EVAL_SEASON}.csv")

@@ -10,7 +10,8 @@ ever sees the small gamma vector. Alternate the two updates to convergence.
 
 Three specs reported:
   - linear foulcount (the headline gamma1)
-  - foul-trouble indicator (fouls >= period + 1), the convention's own trigger
+  - foul-trouble indicator (config.foul_trouble_threshold: fouls >= period+1
+    in regulation, capped at 5 in OT), the convention's own trigger
   - foul-count dummies (shape; feeds the foul-out-probability chart later)
 
 Outputs data/processed/hazard/{gammas.csv, alphas.csv}.
@@ -31,7 +32,7 @@ EXPOSURE_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "exp
 OUT_DIR = Path(__file__).resolve().parents[2] / "data" / "processed" / "hazard"
 import sys as _sys
 _sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from config import ANALYSIS_SEASONS as SEASONS
+from config import ANALYSIS_SEASONS as SEASONS, foul_trouble_threshold
 PRIOR_MINUTES = 200.0
 MAX_ITER = 25
 TOL = 1e-7
@@ -48,7 +49,7 @@ def load_exposure() -> pd.DataFrame:
           f"{dropped['fouls_in_window'].sum() / df['fouls_in_window'].sum():.1%} of all fouls)")
     df = df[df["minutes_exposed"] > 0].copy()
     df["player_season"] = df["player_id"].astype(str) + "_" + df["season"].astype(str)
-    df["foul_trouble"] = (df["foul_count"] >= df["period"] + 1).astype(float)
+    df["foul_trouble"] = (df["foul_count"] >= foul_trouble_threshold(df["period"])).astype(float)
     df["abs_margin"] = df["score_margin"].abs()
     return df
 

@@ -1,4 +1,4 @@
-# E8 — opponent-strength robustness split (2025, 2,423 occurrences)
+# E8 — opponent-strength robustness split (2025, 2,485 occurrences)
 
 ## Panel A (primary): opponent team-season net rating terciles
 Net rating = points scored minus allowed per 100 possessions at the
@@ -8,9 +8,9 @@ the behavioral-window play-by-play.
 
          occurrences  mean_pp_est  mean_pp_k0  split_lo  split_hi
 tercile                                                          
-strong           808         2.52        0.79      4.11     11.05
-average          769         2.53        0.81     -0.18      3.34
-weak             846         2.56        0.80    -11.94     -0.29
+strong           749         2.32        0.76      4.81     11.05
+average          871         2.36        0.79     -0.18      4.11
+weak             865         2.39        0.78    -11.94     -0.29
 
 PASS CONDITION (pre-registered): mean cost per occurrence positive in every Panel A tercile at kappa = 0 -> PASS
 
@@ -20,9 +20,9 @@ decision moment (mid-spell lineup; focal-player-in-lineup match rate 100.0%), 20
 
          occurrences  mean_pp_est  mean_pp_k0  split_lo  split_hi
 tercile                                                          
-strong           808         2.54        0.76      7.79     24.70
-average          807         2.57        0.83      1.73      7.76
-weak             808         2.50        0.80    -17.23      1.73
+strong           828         2.31        0.73      7.87     24.70
+average          828         2.41        0.82      1.87      7.87
+weak             829         2.35        0.79    -17.23      1.86
 
 Note: the Panel B split correlates with score state (weak lineups
 appear in blowouts, when starters rest), so Panel A is the primary

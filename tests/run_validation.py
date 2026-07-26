@@ -16,7 +16,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from config import ANALYSIS_SEASONS, EVAL_SEASON  # noqa: E402
+from config import ANALYSIS_SEASONS, EVAL_SEASON, foul_trouble_threshold  # noqa: E402
 from policy.solver import (  # noqa: E402
     PolicyValues, margin_step_distribution, evaluate_convention_cost,
     D_GRID, N_STEPS, STEP_SECONDS, period_of_step,
@@ -92,7 +92,7 @@ def run_A_B_D(support, probs, mean):
     for t in range(1, N_STEPS + 1):
         period = period_of_step(t)
         for f in range(6):
-            if f >= period + 1:
+            if f >= foul_trouble_threshold(period):
                 total += len(D_GRID)
                 agree += int((pv.policy[t, f] == 0).sum())
     pct = agree / total * 100
@@ -329,7 +329,7 @@ def run_E(costs, support, probs, mean, kappa_hat):
     lu["margin"] = pd.to_numeric(lu["SCOREMARGIN"].replace("TIE", "0"), errors="coerce")
     finals = lu.groupby("GAME_ID")["margin"].last()
 
-    trouble = ex24[ex24["foul_count"] >= ex24["period"] + 1]
+    trouble = ex24[ex24["foul_count"] >= foul_trouble_threshold(ex24["period"])]
     first = trouble.sort_values("start_elapsed").groupby(["game_id", "player_id"]).first()
     on_after = []
     for (gid, pid), row in first.iterrows():
@@ -370,7 +370,7 @@ def run_E(costs, support, probs, mean, kappa_hat):
                 model = "--"  # terminal state: game over, nothing to decide
             else:
                 model = "play" if (s["foul_count"] >= 6) is False and pv.policy[t_idx, min(int(s["foul_count"]), 6), d_idx] else "sit"
-            trouble_flag = "TROUBLE" if s["foul_count"] >= s["period"] + 1 else "       "
+            trouble_flag = "TROUBLE" if s["foul_count"] >= foul_trouble_threshold(s["period"]) else "       "
             lines.append(
                 f"  Q{int(s['period'])} {t_rem / 60:5.1f}m left | d={d_team:+3.0f} | f={int(s['foul_count'])} {trouble_flag} "
                 f"| coach: on {s['minutes_exposed']:4.1f}m ({s['ended_by']}) | model: {model}")

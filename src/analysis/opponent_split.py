@@ -31,7 +31,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
-from config import ANALYSIS_SEASONS, EVAL_SEASON  # noqa: E402
+from config import ANALYSIS_SEASONS, EVAL_SEASON, foul_trouble_threshold  # noqa: E402
 from policy.solver import margin_step_distribution, evaluate_convention_cost  # noqa: E402
 
 LINEUPS_DIR = ROOT / "data" / "processed" / "lineups"
@@ -79,7 +79,7 @@ def occurrence_frame(costs_est: pd.DataFrame, costs_k0: pd.DataFrame) -> pd.Data
     exposure table (same first-trouble-spell definition as the solver)."""
     ex = pd.read_parquet(EXPOSURE_DIR / f"{EVAL_SEASON}.parquet")
     ex = ex[ex["minutes_exposed"] > 0]
-    trouble = ex[ex["foul_count"] >= ex["period"] + 1]
+    trouble = ex[ex["foul_count"] >= foul_trouble_threshold(ex["period"])]
     first = (trouble.sort_values("start_elapsed")
              .groupby(["game_id", "player_id"]).first().reset_index())
     occ = costs_est.merge(

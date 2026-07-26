@@ -10,7 +10,7 @@
 
 ## 1. Research Question
 
-When a valuable player picks up early fouls, nearly every coach benches him ("fouls ≥ quarter + 1, he sits"). Is this convention optimal? We quantify the expected win probability cost of conventional foul-trouble benching versus a policy derived from a dynamic decision model.
+When a valuable player picks up early fouls, nearly every coach benches him ("fouls ≥ quarter + 1, he sits"; in overtime, capped at 5 fouls — one shy of disqualification — see §3.4). Is this convention optimal? We quantify the expected win probability cost of conventional foul-trouble benching versus a policy derived from a dynamic decision model.
 
 **Headline deliverable:** one number — e.g., "conventional benching costs ~X% win probability per occurrence, roughly Y wins per team per season" — plus personalized play/sit threshold maps by player profile.
 
@@ -135,7 +135,27 @@ personalization rests on δ_i and λ_i. The DP keeps pooled κ̄.
 ```
 net_rating_it = θ_i + κ · 1[foul_trouble_it] + controls + ε
 ```
-Foul trouble defined as fouls ≥ quarter + 1. Include player fixed effects and opponent controls. Report κ as an upper bound on the causal effect (foul trouble is not randomly assigned). Either result publishable: large κ partly vindicates convention; small κ means coaches burn wins.
+**Foul trouble definition (single source of truth: `config.foul_trouble_threshold`,
+fixed 2026-07-26 — see OT correction below):** fouls ≥ quarter + 1 in
+regulation (periods 1–4); fouls ≥ 5 in overtime (period ≥ 5). One formula
+covers both: `min(period + 1, 5)`. Include player fixed effects and
+opponent controls. Report κ as an upper bound on the causal effect (foul
+trouble is not randomly assigned). Either result publishable: large κ
+partly vindicates convention; small κ means coaches burn wins.
+
+**OT correction (2026-07-26):** the original literal `period + 1` formula
+required 6 fouls to register as foul trouble in period 5, which is already
+disqualification — a player still on the floor could structurally never
+be flagged in OT, silently excluding all OT foul-trouble minutes from κ
+estimation, the B0 selection check, the DP's conventional policy π_c, and
+occurrence selection for the headline cost table. Fixed by capping the
+threshold at `FOUL_OUT − 1 = 5` for period ≥ 5, expressed as the single
+formula `min(period + 1, 5)` — regulation behavior is unchanged (period + 1
+already tops out at 5 in Q4) and OT is now reachable. Defined once in
+`src/config.py` and imported everywhere the threshold is used, so no
+module can silently drift from it again. See `reports/RESULTS_FREEZE.md`
+v2 (tag `results-freeze-v2-ot-fix`) for the magnitude of what this
+captures and whether any headline number moved.
 
 **B0 selection verdict (2026-07-24, pre-registered, FINAL — tag `b0-final`):
 SELECTION-DRIVEN.** The positive pooled κ̄ does not survive where the coach

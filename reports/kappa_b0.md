@@ -89,42 +89,27 @@ after rung 2, the verdict is "underpowered, not contradicted" permanently.
 Same spell-WLS machinery and DiD spec as above (clutch-window main effect
 included; raw split reported alongside). Report subsample sizes at each
 rung, point estimates, SEs, t-stats, and which verdict fired.
+
 <!-- widened-results -->
 
 ## Widened rerun — results (protocol above, registered before running)
 
 ### Rung 1: final 7 min, |d| <= 6, top-half delta, final-90s one-possession spells excluded
-FORCED: 5,859 poss (1,205 spells) | EXCLUDED-final90: 304 poss | CHOSEN: 75,652 poss
+FORCED: 7,781 poss (1,514 spells) | EXCLUDED-final90: 353 poss | CHOSEN: 77,016 poss
 
 raw split (per 48; naive SEs, difference t ignores covariance):
-                                per48   se48     t
-foul_trouble[FORCED]             1.79   2.34  0.77
-foul_trouble[EXCLUDED-final90]  52.83  10.23  5.16
-foul_trouble[CHOSEN]             4.21   0.66  6.41
-difference FORCED - CHOSEN: -2.42 per 48, t = -0.99
+                                per48  se48     t
+foul_trouble[FORCED]             0.21  2.04  0.10
+foul_trouble[EXCLUDED-final90]  53.95  9.50  5.68
+foul_trouble[CHOSEN]             4.13  0.65  6.33
+difference FORCED - CHOSEN: -3.92 per 48, t = -1.83
 
 DiD spec (window main effect included; foul_trouble[FORCED] = within-clutch foul-trouble shift — the verdict number):
-                                per48   se48     t
-foul_trouble[FORCED]            -0.59   2.41 -0.24
-foul_trouble[EXCLUDED-final90]  50.45  10.25  4.92
-foul_trouble[CHOSEN]             4.25   0.66  6.46
-clutch_window                    2.61   0.64  4.11
-DiD difference FORCED - CHOSEN: -4.84 per 48, t = -1.94
+                                per48  se48     t
+foul_trouble[FORCED]            -1.96  2.11 -0.93
+foul_trouble[EXCLUDED-final90]  51.64  9.51  5.43
+foul_trouble[CHOSEN]             4.19  0.65  6.43
+clutch_window                    2.74  0.64  4.31
+DiD difference FORCED - CHOSEN: -6.16 per 48, t = -2.79
 
 VERDICT (pre-registered threshold): SELECTION-DRIVEN — FORCED-core point estimate at or below zero. The positive pooled kappa is substantially selection; the kappa-boosted numbers are not causally defensible. Downstream artifacts flagged: headline table, E6 per-player tables, E7 team slice, kappa_share column.
-
-## Final defensible headline framing (plain language)
-
-Conventional foul-trouble benching costs at least 0.65 wins per team per
-season (0.80 percentage points of win probability per occurrence, 2,423
-occurrences evaluated in 2025-26). That floor is computed at kappa = 0 and
-does not depend on any claim about how well players perform while carrying
-foul trouble. The larger figure of 2.05 wins per team per season uses the
-estimated kappa of +4.2 per 48, and this check shows that estimate is
-selection, not adaptation: when we look only at minutes where coaches had
-no real benching option, the foul-trouble performance boost disappears
-(-0.6 per 48, indistinguishable from zero). So the paper's causal claim is
-the floor. The 2.05 figure may be reported only as descriptive accounting
-of what teams experience under current management, in which coaches already
-select who plays through foul trouble, and must never be framed as the
-causal cost of the convention.
