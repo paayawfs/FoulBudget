@@ -173,18 +173,20 @@ module can silently drift from it again. See `reports/RESULTS_FREEZE.md`
 v2 (tag `results-freeze-v2-ot-fix`) for the magnitude of what this
 captures and whether any headline number moved.
 
-**B0 selection verdict (2026-07-24, pre-registered, FINAL — tag `b0-final`):
+**B0 selection verdict (2026-07-24, pre-registered, FINAL — tag `b0-final`;
+FORCED-exposure figures below are the post-OT-fix numbers, v2):
 SELECTION-DRIVEN.** The positive pooled κ̄ does not survive where the coach
 has no real choice: in FORCED exposure (final 7 minutes, |d| ≤ 6, top-half
-delta, take-foul/FT-contest window excluded; 5,859 possessions) the DiD
-κ̄ is −0.59 per 48 (t = −0.24) against +4.25 per 48 in CHOSEN exposure.
+delta, take-foul/FT-contest window excluded; 7,781 possessions) the DiD
+κ̄ is −1.96 per 48 (t = −0.93) against +4.19 per 48 in CHOSEN exposure.
 The pooled κ̄ > 0 is substantially coach selection, not adaptation.
 Consequences, binding on all materials:
 - **κ-boosted numbers are not causally defensible.** The estimated-κ
-  headline (2.05 wins/team/season) and every quantity computed at
+  headline (1.59 wins/team/season) and every quantity computed at
   estimated κ are *descriptive* accounting of the convention as currently
   managed, never causal claims. The causal headline is the κ = 0 floor
-  (0.65 wins/team/season, 0.80pp per occurrence).
+  (0.28 wins/team/season, 0.34pp per occurrence — tag `results-freeze-v3-pic`,
+  see §3.5).
 - Artifacts re-labeled accordingly: the headline table (VALIDATION.md
   re-estimation section), E6 per-player cost tables (mean_pp/total_pp are
   now the kappa=0 PRIMARY ranking; mean_pp_est/total_pp_est are the
@@ -201,6 +203,21 @@ Consequences, binding on all materials:
 Cost of convention = E_real_states[ V^π*(s) − V^πc(s) ]
 ```
 where π* = model-optimal policy, πc = conventional benching rule. Evaluate over actual foul-trouble states observed in held-out seasons. Also run per-player-archetype: expect **starting centers** (high λ, weak backups, defensive anchors) to be a bigger leak than wing stars — underexplored angle.
+
+**πc respecification (2026-08-07, tag `results-freeze-v3-pic`):** πc
+previously forced PLAY whenever `f < threshold(period)`, independent of
+whether playing was actually optimal there. For below-replacement players
+(δ ≤ 0), π* sits at every state regardless of foul trouble, so ~56% of the
+pre-fix κ=0 headline (0.65 wins/team/season) was measuring "this player is
+below replacement," not the foul-trouble convention. πc now plays
+optimally (argmax over play/sit) below threshold and is forced to sit only
+at/above it, so π* and πc diverge only on the convention itself. New
+headline at κ=0: 0.28 wins/team/season, with the δ≤0 component now exactly
+zero (πc's actions are a subset of π*'s feasible actions at every state, so
+V^πc ≤ V^π* pointwise by construction — confirmed empirically, 0 negative
+WP costs among 2,485 occurrences). See `reports/RESULTS_FREEZE.md` v3 for
+the full before/after and the re-solved κ* (the κ at which the headline
+cost reaches zero).
 
 **Open questions (resolve during estimation, not before):**
 - RAPM regularization: single-season vs. multi-season prior? (Multi-season stabilizes δ but complicates per-season replacement composites.)
