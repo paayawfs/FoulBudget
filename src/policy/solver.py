@@ -12,8 +12,10 @@ the focal team's perspective, player fouls 0..6. Two actions:
     fouls arrive at hazard lambda(f, period); f = 6 locks in sit forever.
   - terminal: V(0, d) = 1[d > 0] + 0.5*1[d = 0].
 
-The conventional policy pi_c (sit iff f >= foul_trouble_threshold(period),
-config.py -- quarter + 1 in regulation, capped at 5 in OT) is valued on the
+The conventional policy pi_c is forced to sit iff f >= foul_trouble_threshold
+(period) (config.py -- quarter + 1 in regulation, capped at 5 in OT); below
+that threshold it plays optimally (argmax over play/sit), so pi_c diverges
+from pi* only in the forced-sit convention itself. Valued on the
 same dynamics; cost of convention = V* - V^c averaged over foul-trouble
 states actually observed in the held-out season's exposure table (Section 3.5).
 
@@ -144,7 +146,11 @@ class PolicyValues:
                 play = ev_play_o >= ev_sit_o - PLAY_TIE_EPS
                 self.policy[t, f] = play
                 self.V_opt[t, f] = np.where(play, ev_play_o, ev_sit_o)
-                self.V_conv[t, f] = ev_play_c if f < foul_trouble_threshold(period) else ev_sit_c
+                if f >= foul_trouble_threshold(period):
+                    self.V_conv[t, f] = ev_sit_c  # convention: forced sit in foul trouble
+                else:
+                    play_c = ev_play_c >= ev_sit_c - PLAY_TIE_EPS
+                    self.V_conv[t, f] = np.where(play_c, ev_play_c, ev_sit_c)  # optimal elsewhere
             # pin absorbing blowout edges (consistent with either terminal)
             self.V_opt[t, :, 0] = term[:, 0]
             self.V_opt[t, :, -1] = term[:, -1]

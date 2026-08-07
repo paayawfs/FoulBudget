@@ -49,9 +49,13 @@ qualifying state was in OT). Restricted to 2025-26 (the evaluation season):
   on the terminal boundary state where `V_opt` and `V_conv` are identical
   by construction — so every newly-captured OT occurrence contributes
   `cost_wp = 0` exactly, regardless of kappa. Verified empirically: the
-  216-player E6 table is byte-identical at kappa = 0 to the pre-fix
-  numbers (Jokic 37.73pp, Wembanyama 31.90pp, Brooks 6.94pp/rank 99, all
-  unchanged) even though occurrence counts rose. This is a separate,
+  216-player E6 table's **season-total column** (`total_pp`) is
+  byte-identical at kappa = 0 to the pre-fix numbers (Jokic 37.73pp,
+  Wembanyama 31.90pp, Brooks 6.94pp/rank 99, all unchanged) even though
+  occurrence counts rose — zero-cost additions to a sum leave the sum
+  unchanged. The **per-occurrence mean** (`mean_pp`) is not byte-identical:
+  it is the unchanged total divided by a larger occurrence count, so it
+  shifts down slightly for every player who picked up OT occurrences. This is a separate,
   pre-existing structural limitation (the DP was never built to model
   overtime), not fixed here — out of scope for a threshold-only
   correction and flagged, not patched, per the project's frozen-scope

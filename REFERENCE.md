@@ -69,6 +69,22 @@ A third "hide" action (defensive reassignment onto weaker offensive players) is 
 - This makes "play" = "keep him on and manage as NBA coaches currently do," which is the decision-relevant comparison. It also strengthens any anti-benching result.
 - Limitations paragraph should note: decomposing player adaptation vs. tactical reassignment requires defensive matchup / tracking data (future work).
 
+**Also explicitly OUT of scope: overtime is not modeled in the DP.** `t`
+runs regulation only (`N_STEPS = 2880s / 30s`); `period_of_step` clamps at
+period 4. Confirmed 2026-07-26 (see `reports/RESULTS_FREEZE.md` v2): any
+exposure spell starting in OT collapses to the terminal boundary state in
+`evaluate_convention_cost`, where `V_opt` and `V_conv` are identical by
+construction, so OT foul-trouble occurrences are evaluated (correctly
+flagged as foul trouble per §3.4's OT-aware threshold) but always
+contribute `cost_wp = 0` regardless of κ, δ, or foul count. **Decision
+(2026-07-26): leave as a documented limitation, not a feature to build.**
+Closing it would need an OT-extended time grid, an OT margin-step
+distribution, and OT hazard multipliers (`hazard_table` only has columns
+for periods 1-4) — real modeling work, and OT is a small share of total
+minutes league-wide. Limitations paragraph should note: the headline cost
+is a regulation-only estimate; OT foul-trouble minutes are measured (κ,
+B0) but not policy-costed.
+
 ---
 
 ## 3. Estimation Plan
@@ -218,6 +234,7 @@ where π* = model-optimal policy, πc = conventional benching rule. Evaluate ove
 - **Referee heterogeneity:** crews vary in whistle tightness. Add crew random effect or game-level foul-rate control.
 - **Endogeneity of κ:** foul trouble correlates with tough matchups; control for opponent, report as bound.
 - **Scope creep:** resist modeling individual foul *types*, hiding, or tracking-data extensions. One clean number beats three muddy ones.
+- **OT is invisible to the policy-cost headline:** the DP's time grid ends at the regulation buzzer (§2), so any evaluated occurrence starting in OT scores `cost_wp = 0` by construction, not because the model judged it costless. Don't cite the headline wins/team/season number as covering OT minutes — it doesn't. κ and B0 (plain regressions, no DP) do include OT exposure.
 
 ---
 
